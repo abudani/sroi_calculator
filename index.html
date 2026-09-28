@@ -1,0 +1,2254 @@
+<title>SROI Calculator · ZIGLA</title>
+<!-- v8: save/load de proyectos SF-ready -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+:root {
+  --navy:#151F6D; --navy-d:#0D1550; --navy-lt:#E8EAF6;
+  --blue:#146BF6; --blue-d:#0A56D0; --blue-lt:#E6F0FF;
+  --bg:#F5F6FA; --surface:#FFFFFF; --surface-2:#F0F2F8;
+  --text:#0F1320; --text-2:#3D4666; --text-3:#8891B0;
+  --border:#DDE0EE; --border-2:#ECEEF8;
+  --green:#1A7A4A; --green-lt:#E5F4ED;
+  --amber:#B87D1B; --amber-lt:#FDF2E0;
+  --red:#C0392B; --red-lt:#FDECEA;
+  --shadow:0 1px 3px rgba(21,31,109,.06),0 4px 16px rgba(21,31,109,.07);
+  --r:10px; --r-sm:6px;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#080C1A; --surface:#0F1428; --surface-2:#141930;
+  --text:#E0E4F5; --text-2:#8891B0; --text-3:#3D4666;
+  --border:#1E2450; --border-2:#161C3C;
+  --navy-lt:#111840; --blue-lt:#0D1F4A;
+  --green:#3DB870; --green-lt:#0C2519;
+  --amber:#D4A540; --amber-lt:#221800;
+  --red:#E05C4C; --red-lt:#2A0D09;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);
+}}
+:root[data-theme=dark]{
+  --bg:#080C1A; --surface:#0F1428; --surface-2:#141930;
+  --text:#E0E4F5; --text-2:#8891B0; --text-3:#3D4666;
+  --border:#1E2450; --border-2:#161C3C;
+  --navy-lt:#111840; --blue-lt:#0D1F4A;
+  --green:#3DB870; --green-lt:#0C2519;
+  --amber:#D4A540; --amber-lt:#221800;
+  --red:#E05C4C; --red-lt:#2A0D09;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Montserrat',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* ─── HEADER ─── */
+.app-header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:0 24px;max-width:1000px;margin:0 auto;height:56px;gap:12px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-zigla{color:#fff;font-weight:700;font-size:17px;letter-spacing:.02em}
+.logo-sep{color:rgba(255,255,255,.3);font-size:18px;font-weight:300}
+.logo-tool{color:rgba(255,255,255,.75);font-size:13px;font-weight:500;letter-spacing:.04em}
+.header-actions{display:flex;gap:8px;align-items:center}
+
+/* ─── STEPS BAR ─── */
+.steps-bar{background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.steps-bar::-webkit-scrollbar{display:none}
+.steps-inner{display:flex;max-width:1000px;margin:0 auto;padding:0 20px}
+.step-pill{display:flex;align-items:center;gap:7px;padding:10px 14px 10px 0;border:none;background:none;color:var(--text-3);font-size:12px;font-family:'Montserrat',sans-serif;font-weight:500;cursor:default;white-space:nowrap;position:relative;letter-spacing:.02em;transition:color .15s}
+.step-pill:not(:last-child)::after{content:'›';position:absolute;right:2px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--border)}
+.step-num{width:22px;height:22px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;font-size:10px;font-weight:700;flex-shrink:0;transition:all .2s}
+.step-pill.active{color:var(--navy)}
+.step-pill.active .step-num{background:var(--navy);border-color:var(--navy);color:#fff}
+.step-pill.done{color:var(--blue);cursor:pointer}
+.step-pill.done .step-num{background:var(--blue-lt);border-color:var(--blue);color:var(--blue);font-size:9px}
+.step-pill.done:hover{color:var(--blue-d)}
+
+/* ─── MAIN ─── */
+main{max-width:1000px;margin:0 auto;padding:28px 24px 100px}
+
+.section-header{margin-bottom:22px}
+.section-header h2{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:5px;color:var(--navy)}
+.section-header p{color:var(--text-2);font-size:13px;max-width:60ch;line-height:1.6}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.card+.card,.card+.sh-group,.sh-group+.sh-group{margin-top:14px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.card-title{font-weight:600;font-size:13.5px;color:var(--text)}
+
+.form-grid{display:grid;gap:14px}
+.form-grid-2{grid-template-columns:1fr 1fr}
+.form-grid-3{grid-template-columns:1fr 1fr 1fr}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11.5px;font-weight:600;color:var(--text-2);letter-spacing:.04em;text-transform:uppercase}
+.field-note{font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.45}
+
+input[type=text],input[type=number],select,textarea{
+  background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-sm);
+  padding:8px 11px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--text);
+  width:100%;outline:none;transition:border-color .15s,box-shadow .15s;font-weight:500
+}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-lt)}
+input[type=number]{font-variant-numeric:tabular-nums}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3.5l3 3 3-3' fill='none' stroke='%238891B0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;-webkit-appearance:none;cursor:pointer}
+
+/* ─── SLIDERS ─── */
+.slider-field{display:flex;flex-direction:column;gap:7px}
+.slider-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.slider-label{font-size:11.5px;font-weight:600;color:var(--text-2);letter-spacing:.02em}
+.slider-val{font-size:11.5px;font-weight:700;color:var(--navy);background:var(--navy-lt);padding:2px 9px;border-radius:20px;min-width:46px;text-align:center;flex-shrink:0}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;border-radius:2px;background:var(--border);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--navy);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .1s}
+input[type=range]::-webkit-slider-thumb:active{transform:scale(1.2)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--navy);cursor:pointer;border:none}
+.slider-hint{font-size:11px;color:var(--text-3);line-height:1.45}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--r-sm);font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:'Montserrat',sans-serif;transition:all .15s;line-height:1;white-space:nowrap;letter-spacing:.02em}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-navy:hover{background:var(--navy-d)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{background:var(--blue-d)}
+.btn-ghost{background:transparent;color:var(--text-2);border:1.5px solid var(--border)}
+.btn-ghost:hover{background:var(--surface-2);border-color:var(--text-3);color:var(--text)}
+.btn-icon{background:transparent;color:var(--text-3);border:none;padding:5px 8px;border-radius:var(--r-sm);cursor:pointer;font-size:14px;line-height:1;transition:all .15s}
+.btn-icon:hover{background:var(--red-lt);color:var(--red)}
+.btn-add{width:100%;background:var(--blue-lt);color:var(--blue);border:1.5px dashed var(--blue);border-radius:var(--r-sm);padding:11px;margin-top:10px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:'Montserrat',sans-serif;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;letter-spacing:.02em}
+.btn-add:hover{background:var(--blue);color:#fff;border-style:solid}
+.btn-proxy{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--blue);background:var(--blue-lt);color:var(--blue);font-family:'Montserrat',sans-serif;transition:all .15s;letter-spacing:.02em}
+.btn-proxy:hover{background:var(--blue);color:#fff}
+.btn-xs{padding:4px 10px;font-size:11px;border-radius:20px;font-weight:600}
+
+/* ─── LANG TOGGLE ─── */
+.lang-toggle{display:flex;align-items:center;gap:3px;background:rgba(255,255,255,.12);border-radius:20px;padding:3px}
+.lang-opt{padding:4px 11px;border-radius:17px;font-size:11.5px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.6);border:none;background:none;font-family:'Montserrat',sans-serif;transition:all .15s;letter-spacing:.04em}
+.lang-opt.active{background:#fff;color:var(--navy)}
+
+/* ─── STEP FOOTER ─── */
+.step-footer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:100}
+.step-footer-inner{display:flex;align-items:center;justify-content:space-between;max-width:1000px;margin:0 auto;padding:12px 24px}
+.step-info{display:flex;flex-direction:column}
+.step-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.step-name{font-size:13px;font-weight:600;color:var(--text-2)}
+.footer-btns{display:flex;gap:8px}
+
+/* ─── GROUPS & TAGS ─── */
+.sh-group{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.sh-group-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--navy-lt);border-bottom:1px solid var(--border)}
+.sh-tag{font-size:12px;font-weight:700;color:var(--navy);letter-spacing:.02em}
+.sh-group-body{padding:16px}
+
+/* ─── OUTCOME CARD ─── */
+.out-card{background:var(--surface-2);border:1px solid var(--border-2);border-radius:var(--r-sm);padding:14px;margin-bottom:10px}
+.out-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.out-card-title{font-size:12.5px;font-weight:600;color:var(--text-2)}
+.proxy-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.proxy-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--green-lt);color:var(--green)}
+.proxy-src{font-size:10.5px;color:var(--text-3);font-weight:400}
+
+/* ─── OUTCOME CARD SECTIONS ─── */
+.out-section{margin-top:12px}
+.out-section+.out-section{margin-top:0;padding-top:12px;border-top:1px dashed var(--border)}
+.out-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.out-section-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.out-val-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;background:var(--green-lt);color:var(--green);max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+/* ─── ADJUSTMENT CARD ─── */
+.adj-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:var(--shadow)}
+.adj-card-meta{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border-2)}
+.adj-out-name{font-weight:700;font-size:13px;margin-bottom:3px;color:var(--navy)}
+.adj-sh-tag{display:inline-block;font-size:11px;color:var(--text-3);background:var(--navy-lt);border:1px solid var(--border);padding:2px 9px;border-radius:20px;font-weight:600}
+.adj-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ─── RESULTS ─── */
+.result-hero{background:linear-gradient(135deg,var(--navy) 0%,#1E3A9F 60%,#1652C9 100%);border-radius:var(--r);padding:40px 28px;text-align:center;margin-bottom:20px;position:relative;overflow:hidden}
+.result-hero::after{content:'SROI';position:absolute;right:-10px;top:-20px;font-size:140px;font-weight:700;color:rgba(255,255,255,.04);pointer-events:none;letter-spacing:-.04em}
+.sroi-label{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px}
+.sroi-ratio{font-size:76px;font-weight:700;color:#fff;line-height:1;letter-spacing:-.04em}
+.sroi-ratio sup{font-size:30px;vertical-align:super}
+.sroi-sub{font-size:14px;color:rgba(255,255,255,.7);margin-top:12px}
+.sroi-sub strong{color:#fff}
+.sroi-interp{font-size:12.5px;color:rgba(255,255,255,.65);max-width:52ch;margin:14px auto 0;line-height:1.6;font-style:italic}
+
+.metrics-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;text-align:center;box-shadow:var(--shadow)}
+.metric-lbl{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
+.metric-val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.metric-val.navy{color:var(--navy)} .metric-val.green{color:var(--green)} .metric-val.amber{color:var(--amber)}
+
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.chart-wrap h3{font-size:12.5px;font-weight:700;color:var(--text-2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:16px}
+
+.results-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.results-tbl th{text-align:left;padding:8px 12px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);border-bottom:2px solid var(--border)}
+.results-tbl td{padding:9px 12px;border-bottom:1px solid var(--border-2);color:var(--text-2)}
+.results-tbl td.num{font-variant-numeric:tabular-nums;text-align:right;color:var(--text);font-weight:600}
+.results-tbl td.pct{text-align:right;color:var(--text-3);font-size:11.5px}
+.results-tbl .total-row td{font-weight:700;color:var(--navy);border-top:2px solid var(--border);background:var(--navy-lt)}
+.results-tbl tr:last-child:not(.total-row) td{border-bottom:none}
+
+/* ─── PROXY MODAL ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+.modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:680px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);border:1px solid var(--border)}
+.modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.modal-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--text-3)}
+.modal-search-row{display:flex;gap:8px;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.modal-search{flex:1}
+.modal-search input{background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--text);width:100%;outline:none}
+.modal-search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-lt)}
+.domain-tabs{display:flex;gap:4px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.domain-tab{padding:5px 13px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:none;color:var(--text-3);font-family:'Montserrat',sans-serif;transition:all .15s;letter-spacing:.02em}
+.domain-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.modal-body{flex:1;overflow-y:auto;padding:8px 0}
+.proxy-group{padding:4px 0}
+.proxy-group-title{padding:10px 20px 6px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border-2)}
+.proxy-row-item{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;cursor:pointer;transition:background .1s;gap:12px}
+.proxy-row-item:hover{background:var(--blue-lt)}
+.proxy-info{flex:1;min-width:0}
+.proxy-name{font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:2px}
+.proxy-meta{font-size:11px;color:var(--text-3)}
+.proxy-value{text-align:right;flex-shrink:0}
+.proxy-amount{font-size:13px;font-weight:700;color:var(--navy)}
+.proxy-unit{font-size:10.5px;color:var(--text-3);margin-top:1px}
+.proxy-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:3px}
+.proxy-tag.hc{background:#E8F5E9;color:#2E7D32}
+.proxy-tag.sc{background:#E3F2FD;color:#1565C0}
+.proxy-tag.nc{background:#E8F5E8;color:#2E7D32}
+.scope-badge{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;margin-left:5px;vertical-align:middle}
+.scope-LATAM{background:#E6F0FF;color:#0A56D0}
+.scope-ARG{background:#E8EAF6;color:#283593}
+.scope-MEX{background:#E8F5E9;color:#1B5E20}
+.scope-URY{background:#E3F2FD;color:#0D47A1}
+.scope-COL{background:#FFF3E0;color:#E65100}
+.scope-CHL{background:#FCE4EC;color:#880E4F}
+.scope-PER{background:#F3E5F5;color:#6A1B9A}
+.scope-Global{background:#F5F5F5;color:#37474F}
+.proxy-disclaimer{padding:8px 20px;background:var(--amber-lt);border-bottom:1px solid var(--border);font-size:11px;color:var(--text-2);line-height:1.4}
+.proxy-fallback{opacity:.82;border-left:3px solid var(--border)}
+.proxy-fallback .proxy-name{color:var(--text-2)}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;flex-shrink:0}
+.empty-modal{padding:40px 20px;text-align:center;color:var(--text-3);font-size:13px}
+
+/* ─── COMPARADOR DE ESCENARIOS ─── */
+.comp-wrap{background:var(--surface);border:1.5px solid var(--navy);border-radius:var(--r);padding:22px;margin-top:20px;box-shadow:var(--shadow)}
+.comp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px}
+.comp-title{font-size:14px;font-weight:700;color:var(--navy)}
+.comp-presets{display:flex;gap:6px;flex-wrap:wrap}
+.comp-preset{font-size:11.5px;font-weight:600;padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--text-2);cursor:pointer;font-family:'Montserrat',sans-serif;transition:all .15s}
+.comp-preset:hover{border-color:var(--navy);color:var(--navy)}
+.comp-preset.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.comp-card{border-radius:var(--r);padding:20px;border:1.5px solid var(--border)}
+.comp-card.sc-a{background:linear-gradient(135deg,var(--navy) 0%,#1E3A9F 100%);border-color:transparent;color:#fff}
+.comp-card.sc-b{background:var(--surface-2);border-color:var(--border)}
+.comp-card-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.65;margin-bottom:6px}
+.comp-card.sc-a .comp-card-lbl{color:rgba(255,255,255,.7)}
+.comp-card.sc-b .comp-card-lbl{color:var(--text-3)}
+.comp-card-name{font-size:13px;font-weight:600;margin-bottom:14px;color:inherit}
+.comp-card.sc-a .comp-card-name{color:rgba(255,255,255,.9)}
+.comp-card.sc-b .comp-card-name{color:var(--text-2)}
+.comp-sroi{font-size:50px;font-weight:700;letter-spacing:-.04em;line-height:1}
+.comp-sroi sup{font-size:20px;vertical-align:super}
+.comp-card.sc-a .comp-sroi{color:#fff}
+.comp-card.sc-b .comp-sroi{color:var(--navy)}
+.comp-pv{font-size:12px;margin-top:8px;opacity:.8}
+.comp-interp{font-size:11px;font-style:italic;margin-top:10px;line-height:1.5;opacity:.75}
+.comp-diff{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px;margin-top:10px}
+.comp-diff.pos{background:#E5F4ED;color:var(--green)}
+.comp-diff.neg{background:var(--red-lt);color:var(--red)}
+.comp-sliders{margin-bottom:4px}
+.comp-slider-lbl{font-size:11px;font-weight:700;color:var(--text-2);display:flex;justify-content:space-between;margin-bottom:3px}
+.comp-slider-lbl span:last-child{font-weight:700;color:var(--navy)}
+.comp-slider-wrap{margin-bottom:12px}
+.comp-bar-wrap{margin-top:16px}
+.comp-bar-title{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
+.comp-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:11.5px}
+.comp-bar-label{width:35%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font-weight:600}
+.comp-bar-track{flex:1;height:16px;background:var(--surface-2);border-radius:4px;overflow:hidden;display:flex;gap:2px}
+.comp-bar-a{height:100%;background:var(--navy);border-radius:4px;transition:width .3s}
+.comp-bar-b{height:100%;background:var(--amber);border-radius:4px;transition:width .3s}
+.comp-bar-vals{display:flex;gap:8px;flex-shrink:0;font-size:10.5px;font-variant-numeric:tabular-nums;min-width:130px;justify-content:flex-end}
+.comp-bar-val-a{color:var(--navy);font-weight:700}
+.comp-bar-val-b{color:var(--amber);font-weight:700}
+.comp-legend{display:flex;gap:14px;margin-top:12px;justify-content:flex-end;font-size:11px;color:var(--text-3)}
+.comp-legend-dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+
+/* ─── PROYECTOS GUARDADOS ─── */
+.proj-btn{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.25);padding:5px 11px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;transition:all .15s;letter-spacing:.02em;display:flex;align-items:center;gap:5px}
+.proj-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
+.proj-modal-overlay{position:fixed;inset:0;background:rgba(10,14,40,.55);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:60px 16px 24px;overflow-y:auto}
+.proj-modal{background:var(--surface);border-radius:14px;width:100%;max-width:680px;box-shadow:0 20px 60px rgba(0,0,0,.22);display:flex;flex-direction:column;overflow:hidden;max-height:80vh}
+.proj-modal-head{padding:20px 24px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0}
+.proj-modal-title{font-size:15px;font-weight:700;color:var(--navy)}
+.proj-modal-sub{font-size:12px;color:var(--text-3);margin-top:3px}
+.proj-modal-body{overflow-y:auto;flex:1}
+.proj-list{display:flex;flex-direction:column;gap:0}
+.proj-item{padding:16px 24px;border-bottom:1px solid var(--border-2);display:flex;align-items:center;gap:14px;transition:background .1s}
+.proj-item:hover{background:var(--surface-2)}
+.proj-item:last-child{border-bottom:none}
+.proj-item-main{flex:1;min-width:0}
+.proj-item-name{font-size:13px;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj-item-org{font-size:11.5px;color:var(--text-2);margin-top:1px}
+.proj-item-chips{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.proj-chip{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--surface-2);color:var(--text-3);border:1px solid var(--border)}
+.proj-chip.sroi{background:#EEF2FF;color:var(--navy);border-color:var(--blue-lt)}
+.proj-item-date{font-size:10.5px;color:var(--text-3);text-align:right;white-space:nowrap;flex-shrink:0}
+.proj-item-btns{display:flex;gap:6px;flex-shrink:0}
+.proj-empty{padding:48px 24px;text-align:center;color:var(--text-3)}
+.proj-empty-icon{font-size:36px;margin-bottom:10px}
+.proj-empty p{font-size:13px;margin-top:4px}
+.proj-sf-note{padding:14px 24px;border-top:1px solid var(--border);background:var(--surface-2);flex-shrink:0}
+.proj-sf-title{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.proj-sf-body{font-size:11.5px;color:var(--text-2);line-height:1.6;display:none}
+.proj-sf-body.open{display:block}
+.proj-sf-body code{font-size:10.5px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--navy)}
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transition:opacity .25s,transform .25s;z-index:600;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ─── MISC ─── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;color:var(--text-3);text-align:center;gap:8px}
+.empty-icon{font-size:30px}
+.empty p{font-size:13px}
+.zigla-badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);padding:3px 0}
+
+@media(max-width:600px){
+  .header-inner{padding:0 14px}
+  main{padding:16px 14px 100px}
+  .form-grid-2,.form-grid-3,.adj-grid,.metrics-row,.comp-grid{grid-template-columns:1fr}
+  .step-footer-inner{padding:10px 14px}
+  .sroi-ratio{font-size:52px}
+  .comp-sroi{font-size:36px}
+  .logo-tool,.step-pill-lbl{display:none}
+  .modal{max-height:95vh}
+}
+@media print{
+  .app-header,.steps-bar,.step-footer,.btn-ghost,.btn-navy,.btn-blue,.btn-add,.btn-proxy,.btn-icon,.domain-tabs{display:none!important}
+  main{padding:0}
+  .result-hero{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+
+<!-- APP -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-zigla">ZIGLA</span>
+      <span class="logo-sep">·</span>
+      <span class="logo-tool" id="app-tool-lbl">Calculadora SROI</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="proj-btn" id="btn-projects" onclick="openProjectsModal()">📂 <span id="lbl-projects">Proyectos</span></button>
+      <div class="lang-toggle">
+        <button class="lang-opt active" id="lang-es" onclick="setLang('es')">ES</button>
+        <button class="lang-opt" id="lang-en" onclick="setLang('en')">EN</button>
+        <button class="lang-opt" id="lang-pt" onclick="setLang('pt')">PT</button>
+      </div>
+    </div>
+  </div>
+  <nav class="steps-bar"><div class="steps-inner" id="steps-nav"></div></nav>
+</header>
+
+<main><div id="step-container"></div></main>
+
+<div class="step-footer">
+  <div class="step-footer-inner">
+    <div class="step-info">
+      <span class="step-lbl" id="footer-step-lbl">Paso 1 de 5</span>
+      <span class="step-name" id="footer-step-name">Proyecto</span>
+    </div>
+    <div class="footer-btns">
+      <button class="btn btn-ghost" id="btn-back" onclick="goBack()">← <span id="lbl-back">Anterior</span></button>
+      <button class="btn btn-navy" id="btn-next" onclick="goNext()"><span id="lbl-next">Siguiente</span> →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- PROJECTS MODAL -->
+<div class="proj-modal-overlay" id="proj-modal" style="display:none" onclick="closeProjModal(event)">
+  <div class="proj-modal" onclick="event.stopPropagation()">
+    <div class="proj-modal-head">
+      <div>
+        <div class="proj-modal-title" id="pm-title">📂 Proyectos guardados</div>
+        <div class="proj-modal-sub" id="pm-sub">Cargá un cálculo anterior o guardá el actual</div>
+      </div>
+      <button class="btn btn-ghost btn-xs" onclick="closeProjModal()">&nbsp;✕&nbsp;</button>
+    </div>
+    <div class="proj-modal-body">
+      <div id="proj-list-container"></div>
+    </div>
+    <div class="proj-sf-note">
+      <div class="proj-sf-title" onclick="toggleSfNote()">
+        ☁️ <span id="sf-note-lbl">Integración Salesforce</span> <span id="sf-chevron" style="margin-left:auto;font-size:10px">▶</span>
+      </div>
+      <div class="proj-sf-body" id="sf-note-body">
+        <p>Cada proyecto se guarda con un esquema compatible con Salesforce. Para conectarlo, creá el objeto <code>SROI_Calculation__c</code> con estos campos:</p>
+        <p style="margin-top:6px"><code>Name</code> · <code>Organization__c</code> · <code>Investment__c</code> · <code>Period_Years__c</code> · <code>SROI_Ratio__c</code> · <code>Stakeholder_Count__c</code> · <code>Outcome_Count__c</code> · <code>JSON_Data__c</code> (Long Text Area)</p>
+        <p style="margin-top:6px">Luego reemplazá <code>StorageAdapter</code> en el código por llamadas a la API REST de Salesforce. El campo <code>JSON_Data__c</code> almacena el estado completo y los demás campos quedan indexados para reportería.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROXY MODAL -->
+<div class="modal-overlay" id="proxy-modal" style="display:none" onclick="closeProxyModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Banco de Proxys</div>
+      <div class="modal-sub" id="modal-sub">Seleccioná un valor de referencia para este resultado</div>
+    </div>
+    <div class="modal-search-row">
+      <div class="modal-search">
+        <input type="text" id="proxy-search" placeholder="Buscar..." oninput="filterProxies()">
+      </div>
+      <button class="btn btn-ghost btn-xs" onclick="closeProxyModal()">&nbsp;✕&nbsp;</button>
+    </div>
+    <div class="domain-tabs" id="domain-tabs"></div>
+    <div class="domain-tabs" id="scope-tabs" style="border-top:1px solid var(--border-2);background:var(--surface-2)"></div>
+    <div class="modal-body" id="proxy-list"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-xs" onclick="closeProxyModal()" id="modal-cancel-lbl">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// PROXY DATABASE
+// scope: 'LATAM' | 'ARG' | 'MEX' | 'URY' | 'COL' | 'CHL' | 'PER' | 'Global'
+// Todos los valores en USD. Fuentes 2023-2024.
+// Los valores LATAM son promedios regionales ponderados.
+// Los valores por país usan tipo de cambio oficial + PPP según corresponde.
+// ─────────────────────────────────────────────
+const PROXIES = [
+  // ── CAPITAL HUMANO · Ingresos y empleo ──
+  {id:'hc-01',domain:'hc',cat:'income',scope:'LATAM',
+   es:{name:'Inserción laboral formal',cat:'Ingresos y empleo',
+       meta:'Brecha salarial formal/informal · promedio ponderado 6 países',note:'OIT Global Wage Report 2024'},
+   en:{name:'Formal job placement',cat:'Income & employment',
+       meta:'Formal vs informal wage gap · 6-country weighted average',note:'ILO Global Wage Report 2024'},
+   value:2400,unit:'USD/persona/año'},
+  {id:'hc-01-arg',domain:'hc',cat:'income',scope:'ARG',
+   es:{name:'Inserción laboral formal',cat:'Ingresos y empleo',
+       meta:'Brecha salarial formal/informal · Argentina (PPP USD, INDEC 2024)',note:'INDEC / OIT 2024'},
+   en:{name:'Formal job placement',cat:'Income & employment',
+       meta:'Formal vs informal wage gap · Argentina (PPP USD, INDEC 2024)',note:'INDEC / ILO 2024'},
+   value:2800,unit:'USD/persona/año'},
+  {id:'hc-01-mex',domain:'hc',cat:'income',scope:'MEX',
+   es:{name:'Inserción laboral formal',cat:'Ingresos y empleo',
+       meta:'Brecha salarial formal/informal · México (ENOE 2024)',note:'INEGI / ENOE 2024'},
+   en:{name:'Formal job placement',cat:'Income & employment',
+       meta:'Formal vs informal wage gap · Mexico (ENOE 2024)',note:'INEGI / ENOE 2024'},
+   value:3200,unit:'USD/persona/año'},
+  {id:'hc-01-ury',domain:'hc',cat:'income',scope:'URY',
+   es:{name:'Inserción laboral formal',cat:'Ingresos y empleo',
+       meta:'Brecha salarial formal/informal · Uruguay (ECH 2024)',note:'INE Uruguay / OIT 2024'},
+   en:{name:'Formal job placement',cat:'Income & employment',
+       meta:'Formal vs informal wage gap · Uruguay (ECH 2024)',note:'INE Uruguay / ILO 2024'},
+   value:4800,unit:'USD/persona/año'},
+  {id:'hc-01-col',domain:'hc',cat:'income',scope:'COL',
+   es:{name:'Inserción laboral formal',cat:'Ingresos y empleo',
+       meta:'Brecha salarial formal/informal · Colombia (GEIH 2024)',note:'DANE / OIT 2024'},
+   en:{name:'Formal job placement',cat:'Income & employment',
+       meta:'Formal vs informal wage gap · Colombia (GEIH 2024)',note:'DANE / ILO 2024'},
+   value:2200,unit:'USD/persona/año'},
+  {id:'hc-01-chl',domain:'hc',cat:'income',scope:'CHL',
+   es:{name:'Inserción laboral formal',cat:'Ingresos y empleo',
+       meta:'Brecha salarial formal/informal · Chile (ENE 2024)',note:'INE Chile / OIT 2024'},
+   en:{name:'Formal job placement',cat:'Income & employment',
+       meta:'Formal vs informal wage gap · Chile (ENE 2024)',note:'INE Chile / ILO 2024'},
+   value:3800,unit:'USD/persona/año'},
+  {id:'hc-01-per',domain:'hc',cat:'income',scope:'PER',
+   es:{name:'Inserción laboral formal',cat:'Ingresos y empleo',
+       meta:'Brecha salarial formal/informal · Perú (ENAHO 2024)',note:'INEI / OIT 2024'},
+   en:{name:'Formal job placement',cat:'Income & employment',
+       meta:'Formal vs informal wage gap · Peru (ENAHO 2024)',note:'INEI / ILO 2024'},
+   value:1900,unit:'USD/persona/año'},
+  {id:'hc-02',domain:'hc',cat:'income',scope:'LATAM',
+   es:{name:'Capacitación vocacional / habilidades técnicas',cat:'Ingresos y empleo',
+       meta:'Incremento de ingreso por certificación técnica · promedio LATAM',note:'OIT / Banco Mundial 2023'},
+   en:{name:'Vocational / technical skills training',cat:'Income & employment',
+       meta:'Income increase from technical certification · LATAM average',note:'ILO / World Bank 2023'},
+   value:1200,unit:'USD/persona/año'},
+  {id:'hc-02-col',domain:'hc',cat:'income',scope:'COL',
+   es:{name:'Capacitación vocacional / habilidades técnicas',cat:'Ingresos y empleo',
+       meta:'Incremento de ingreso por certificación SENA · Colombia',note:'SENA / DANE Colombia 2024'},
+   en:{name:'Vocational / technical skills training',cat:'Income & employment',
+       meta:'Income increase from SENA certification · Colombia',note:'SENA / DANE Colombia 2024'},
+   value:980,unit:'USD/persona/año'},
+  {id:'hc-02-chl',domain:'hc',cat:'income',scope:'CHL',
+   es:{name:'Capacitación vocacional / habilidades técnicas',cat:'Ingresos y empleo',
+       meta:'Incremento de ingreso por certificación técnica · Chile (SENCE)',note:'SENCE / INE Chile 2024'},
+   en:{name:'Vocational / technical skills training',cat:'Income & employment',
+       meta:'Income increase from technical certification · Chile (SENCE)',note:'SENCE / INE Chile 2024'},
+   value:1900,unit:'USD/persona/año'},
+  {id:'hc-02-per',domain:'hc',cat:'income',scope:'PER',
+   es:{name:'Capacitación vocacional / habilidades técnicas',cat:'Ingresos y empleo',
+       meta:'Incremento de ingreso por certificación técnica · Perú (SENATI)',note:'SENATI / INEI Perú 2024'},
+   en:{name:'Vocational / technical skills training',cat:'Income & employment',
+       meta:'Income increase from technical certification · Peru (SENATI)',note:'SENATI / INEI Peru 2024'},
+   value:820,unit:'USD/persona/año'},
+  {id:'hc-03',domain:'hc',cat:'income',scope:'LATAM',
+   es:{name:'Reducción de brecha salarial de género',cat:'Ingresos y empleo',
+       meta:'Incremento salarial por equidad de género · promedio LATAM',note:'OIT 2024'},
+   en:{name:'Gender wage gap reduction',cat:'Income & employment',
+       meta:'Salary increase from closing gender gap · LATAM average',note:'ILO 2024'},
+   value:1500,unit:'USD/persona/año'},
+  {id:'hc-04',domain:'hc',cat:'income',scope:'LATAM',
+   es:{name:'Acceso a crédito / ingreso emprendedor',cat:'Ingresos y empleo',
+       meta:'Incremento de ingresos por acceso a microfinanzas · LATAM',note:'IFC / FOMIN 2023'},
+   en:{name:'Credit access / entrepreneurship income',cat:'Income & employment',
+       meta:'Income increase from access to financing · LATAM',note:'IFC / FOMIN 2023'},
+   value:1800,unit:'USD/persona/año'},
+  {id:'hc-05',domain:'hc',cat:'income',scope:'LATAM',
+   es:{name:'Reducción pérdida de ingreso por enfermedad',cat:'Ingresos y empleo',
+       meta:'Ingreso recuperado por reducción de días de enfermedad · LATAM',note:'OMS / OIT 2023'},
+   en:{name:'Reduced income loss from illness',cat:'Income & employment',
+       meta:'Recovered income from fewer sick days · LATAM',note:'WHO / ILO 2023'},
+   value:820,unit:'USD/persona/año'},
+  // ── CAPITAL HUMANO · Educación ──
+  {id:'hc-06',domain:'hc',cat:'edu',scope:'LATAM',
+   es:{name:'Permanencia escolar (reducción deserción)',cat:'Educación',
+       meta:'Valor presente de ingresos futuros adicionales · LATAM',note:'UNESCO / Banco Mundial 2023'},
+   en:{name:'School retention (reduced dropout)',cat:'Education',
+       meta:'Present value of higher future earnings · LATAM',note:'UNESCO / World Bank 2023'},
+   value:3200,unit:'USD/persona/año'},
+  {id:'hc-06-arg',domain:'hc',cat:'edu',scope:'ARG',
+   es:{name:'Permanencia escolar (reducción deserción)',cat:'Educación',
+       meta:'Valor presente de ingresos futuros · Argentina (salario promedio INDEC)',note:'INDEC / UNESCO 2024'},
+   en:{name:'School retention (reduced dropout)',cat:'Education',
+       meta:'Present value of higher future earnings · Argentina',note:'INDEC / UNESCO 2024'},
+   value:2400,unit:'USD/persona/año'},
+  {id:'hc-06-mex',domain:'hc',cat:'edu',scope:'MEX',
+   es:{name:'Permanencia escolar (reducción deserción)',cat:'Educación',
+       meta:'Valor presente de ingresos futuros · México (ENOE / INEE)',note:'INEE / Banco Mundial 2024'},
+   en:{name:'School retention (reduced dropout)',cat:'Education',
+       meta:'Present value of higher future earnings · Mexico',note:'INEE / World Bank 2024'},
+   value:3600,unit:'USD/persona/año'},
+  {id:'hc-06-ury',domain:'hc',cat:'edu',scope:'URY',
+   es:{name:'Permanencia escolar (reducción deserción)',cat:'Educación',
+       meta:'Valor presente de ingresos futuros · Uruguay (INE / ANEP)',note:'INE Uruguay / ANEP 2024'},
+   en:{name:'School retention (reduced dropout)',cat:'Education',
+       meta:'Present value of higher future earnings · Uruguay',note:'INE Uruguay / ANEP 2024'},
+   value:5200,unit:'USD/persona/año'},
+  {id:'hc-06-col',domain:'hc',cat:'edu',scope:'COL',
+   es:{name:'Permanencia escolar (reducción deserción)',cat:'Educación',
+       meta:'Valor presente de ingresos futuros · Colombia (DANE / MEN)',note:'DANE / MEN Colombia 2024'},
+   en:{name:'School retention (reduced dropout)',cat:'Education',
+       meta:'Present value of higher future earnings · Colombia',note:'DANE / Ministry of Education 2024'},
+   value:2800,unit:'USD/persona/año'},
+  {id:'hc-06-chl',domain:'hc',cat:'edu',scope:'CHL',
+   es:{name:'Permanencia escolar (reducción deserción)',cat:'Educación',
+       meta:'Valor presente de ingresos futuros · Chile (CASEN / MINEDUC)',note:'MINEDUC / Banco Mundial 2024'},
+   en:{name:'School retention (reduced dropout)',cat:'Education',
+       meta:'Present value of higher future earnings · Chile',note:'MINEDUC / World Bank 2024'},
+   value:4600,unit:'USD/persona/año'},
+  {id:'hc-06-per',domain:'hc',cat:'edu',scope:'PER',
+   es:{name:'Permanencia escolar (reducción deserción)',cat:'Educación',
+       meta:'Valor presente de ingresos futuros · Perú (ENAHO / MINEDU)',note:'MINEDU / Banco Mundial 2024'},
+   en:{name:'School retention (reduced dropout)',cat:'Education',
+       meta:'Present value of higher future earnings · Peru',note:'MINEDU / World Bank 2024'},
+   value:2100,unit:'USD/persona/año'},
+  {id:'hc-07',domain:'hc',cat:'edu',scope:'LATAM',
+   es:{name:'Mejora en habilidades de lectura y escritura',cat:'Educación',
+       meta:'Incremento de ingreso por mejora de alfabetización · LATAM',note:'Banco Mundial 2023'},
+   en:{name:'Improved literacy and reading skills',cat:'Education',
+       meta:'Income gain from literacy improvement · LATAM',note:'World Bank 2023'},
+   value:1100,unit:'USD/persona/año'},
+  {id:'hc-08',domain:'hc',cat:'edu',scope:'LATAM',
+   es:{name:'Acceso a educación superior',cat:'Educación',
+       meta:'Prima salarial universitaria vs. secundaria · LATAM',note:'Banco Mundial 2024'},
+   en:{name:'Access to higher education',cat:'Education',
+       meta:'Wage premium university vs secondary · LATAM',note:'World Bank 2024'},
+   value:4500,unit:'USD/persona/año'},
+  {id:'hc-09',domain:'hc',cat:'edu',scope:'LATAM',
+   es:{name:'Capacitación laboral de adultos',cat:'Educación',
+       meta:'Incremento salarial por formación continua · LATAM',note:'OIT 2024'},
+   en:{name:'Adult workforce training',cat:'Education',
+       meta:'Salary increase from continuing education · LATAM',note:'ILO 2024'},
+   value:1800,unit:'USD/persona/año'},
+  // ── CAPITAL HUMANO · Salud y bienestar ──
+  {id:'hc-10',domain:'hc',cat:'health',scope:'LATAM',
+   es:{name:'Año de vida saludable recuperado (AVISA/DALY)',cat:'Salud y bienestar',
+       meta:'Umbral costo-efectividad OMS · países ingreso medio-bajo',note:'OMS Cost-Effectiveness Threshold 2023'},
+   en:{name:'Healthy life year recovered (DALY avoided)',cat:'Health & wellbeing',
+       meta:'WHO cost-effectiveness threshold · lower-middle income countries',note:'WHO Cost-Effectiveness Threshold 2023'},
+   value:3500,unit:'USD/persona/año'},
+  {id:'hc-11',domain:'hc',cat:'health',scope:'LATAM',
+   es:{name:'Reducción de síntomas de depresión/ansiedad',cat:'Salud y bienestar',
+       meta:'Valor económico de mejora en salud mental (WEMWBS) · LATAM',note:'Lancet / OPS 2023'},
+   en:{name:'Reduced depression/anxiety symptoms',cat:'Health & wellbeing',
+       meta:'Economic value of mental health improvement (WEMWBS) · LATAM',note:'Lancet / PAHO 2023'},
+   value:2200,unit:'USD/persona/año'},
+  {id:'hc-12',domain:'hc',cat:'health',scope:'LATAM',
+   es:{name:'Prevención de muerte evitable (VSL)',cat:'Salud y bienestar',
+       meta:'Valor Estadístico de la Vida ajustado · promedio LATAM (PPP)',note:'OPS / EPA meta-análisis 2023'},
+   en:{name:'Preventable death avoided (VSL)',cat:'Health & wellbeing',
+       meta:'Value of Statistical Life adjusted · LATAM average (PPP)',note:'PAHO / EPA meta-analysis 2023'},
+   value:120000,unit:'USD/evento (una vez)'},
+  {id:'hc-12-arg',domain:'hc',cat:'health',scope:'ARG',
+   es:{name:'Prevención de muerte evitable (VSL)',cat:'Salud y bienestar',
+       meta:'VSL ajustado por ingreso per cápita · Argentina 2024',note:'Ministerio de Economía AR / BID 2024'},
+   en:{name:'Preventable death avoided (VSL)',cat:'Health & wellbeing',
+       meta:'VSL adjusted for per-capita income · Argentina 2024',note:'Argentina Min. of Economy / IDB 2024'},
+   value:85000,unit:'USD/evento (una vez)'},
+  {id:'hc-12-mex',domain:'hc',cat:'health',scope:'MEX',
+   es:{name:'Prevención de muerte evitable (VSL)',cat:'Salud y bienestar',
+       meta:'VSL ajustado por ingreso per cápita · México 2024',note:'IMSS / Banxico / BID 2024'},
+   en:{name:'Preventable death avoided (VSL)',cat:'Health & wellbeing',
+       meta:'VSL adjusted for per-capita income · Mexico 2024',note:'IMSS / Banxico / IDB 2024'},
+   value:100000,unit:'USD/evento (una vez)'},
+  {id:'hc-12-ury',domain:'hc',cat:'health',scope:'URY',
+   es:{name:'Prevención de muerte evitable (VSL)',cat:'Salud y bienestar',
+       meta:'VSL ajustado por ingreso per cápita · Uruguay 2024',note:'BCU / OPS 2024'},
+   en:{name:'Preventable death avoided (VSL)',cat:'Health & wellbeing',
+       meta:'VSL adjusted for per-capita income · Uruguay 2024',note:'BCU / PAHO 2024'},
+   value:200000,unit:'USD/evento (una vez)'},
+  {id:'hc-12-col',domain:'hc',cat:'health',scope:'COL',
+   es:{name:'Prevención de muerte evitable (VSL)',cat:'Salud y bienestar',
+       meta:'VSL ajustado por ingreso per cápita · Colombia 2024',note:'DNP Colombia / BID 2024'},
+   en:{name:'Preventable death avoided (VSL)',cat:'Health & wellbeing',
+       meta:'VSL adjusted for per-capita income · Colombia 2024',note:'DNP Colombia / IDB 2024'},
+   value:75000,unit:'USD/evento (una vez)'},
+  {id:'hc-12-chl',domain:'hc',cat:'health',scope:'CHL',
+   es:{name:'Prevención de muerte evitable (VSL)',cat:'Salud y bienestar',
+       meta:'VSL ajustado por ingreso per cápita · Chile 2024',note:'MINSAL / OPS 2024'},
+   en:{name:'Preventable death avoided (VSL)',cat:'Health & wellbeing',
+       meta:'VSL adjusted for per-capita income · Chile 2024',note:'MINSAL / PAHO 2024'},
+   value:160000,unit:'USD/evento (una vez)'},
+  {id:'hc-12-per',domain:'hc',cat:'health',scope:'PER',
+   es:{name:'Prevención de muerte evitable (VSL)',cat:'Salud y bienestar',
+       meta:'VSL ajustado por ingreso per cápita · Perú 2024',note:'MINSA / OPS 2024'},
+   en:{name:'Preventable death avoided (VSL)',cat:'Health & wellbeing',
+       meta:'VSL adjusted for per-capita income · Peru 2024',note:'MINSA / PAHO 2024'},
+   value:68000,unit:'USD/evento (una vez)'},
+  {id:'hc-13',domain:'hc',cat:'health',scope:'LATAM',
+   es:{name:'Reducción de consumo de sustancias',cat:'Salud y bienestar',
+       meta:'Costo social evitado por reducción de adicciones · LATAM',note:'UNODC / CICAD 2023'},
+   en:{name:'Reduced substance use',cat:'Health & wellbeing',
+       meta:'Avoided social cost from reduced addiction · LATAM',note:'UNODC / CICAD 2023'},
+   value:2800,unit:'USD/persona/año'},
+  {id:'hc-14',domain:'hc',cat:'health',scope:'LATAM',
+   es:{name:'Mejora de nutrición / reducción de desnutrición',cat:'Salud y bienestar',
+       meta:'Valor económico de mejora nutricional · niñez LATAM',note:'IFPRI / UNICEF 2023'},
+   en:{name:'Improved nutrition / reduced malnutrition',cat:'Health & wellbeing',
+       meta:'Economic value of childhood nutrition improvement · LATAM',note:'IFPRI / UNICEF 2023'},
+   value:1600,unit:'USD/persona/año'},
+  {id:'hc-15',domain:'hc',cat:'health',scope:'LATAM',
+   es:{name:'Reducción de violencia doméstica / de género',cat:'Salud y bienestar',
+       meta:'Costos evitados: salud, legales, productividad · LATAM',note:'ONU Mujeres / BID 2023'},
+   en:{name:'Reduced domestic / gender-based violence',cat:'Health & wellbeing',
+       meta:'Avoided health, legal and productivity costs · LATAM',note:'UN Women / IDB 2023'},
+   value:3100,unit:'USD/persona/año'},
+  {id:'hc-16',domain:'hc',cat:'health',scope:'LATAM',
+   es:{name:'Acceso a agua potable segura',cat:'Salud y bienestar',
+       meta:'Reducción de enfermedades + tiempo ahorrado · LATAM',note:'OMS / UNICEF 2023'},
+   en:{name:'Safe drinking water access',cat:'Health & wellbeing',
+       meta:'Disease reduction + time savings · LATAM',note:'WHO / UNICEF 2023'},
+   value:680,unit:'USD/persona/año'},
+  {id:'hc-17',domain:'hc',cat:'health',scope:'LATAM',
+   es:{name:'Bienestar subjetivo / calidad de vida (SWB)',cat:'Salud y bienestar',
+       meta:'Disposición a pagar por mejora en bienestar · LATAM',note:'OCDE / Banco Mundial 2024'},
+   en:{name:'Subjective wellbeing / quality of life (SWB)',cat:'Health & wellbeing',
+       meta:'Willingness to pay for wellbeing improvement · LATAM',note:'OECD / World Bank 2024'},
+   value:1400,unit:'USD/persona/año'},
+  // ── CAPITAL SOCIAL · Costos sociales evitados ──
+  {id:'sc-01',domain:'sc',cat:'avoided',scope:'LATAM',
+   es:{name:'Internación hospitalaria evitada',cat:'Costos sociales evitados',
+       meta:'Costo promedio de internación, sistema público LATAM',note:'Fuente: OPS / SEDES 2024'},
+   en:{name:'Avoided hospital admission',cat:'Avoided social costs',
+       meta:'Average hospitalization cost, LATAM public system',note:'Source: PAHO / Health Ministries 2024'},
+   value:2100,unit:'USD/evento'},
+  {id:'sc-02',domain:'sc',cat:'avoided',scope:'LATAM',
+   es:{name:'Privación de libertad evitada',cat:'Costos sociales evitados',
+       meta:'Costo anual de detención · promedio ponderado LATAM',note:'World Prison Brief / Ministerios 2023'},
+   en:{name:'Avoided incarceration',cat:'Avoided social costs',
+       meta:'Annual cost of detention · LATAM weighted average',note:'World Prison Brief / Ministries 2023'},
+   value:11000,unit:'USD/persona/año'},
+  {id:'sc-02-arg',domain:'sc',cat:'avoided',scope:'ARG',
+   es:{name:'Privación de libertad evitada',cat:'Costos sociales evitados',
+       meta:'Costo por interno/año · SPF Argentina (PPP USD, 2024)',note:'SPF / Ministerio de Justicia AR 2024'},
+   en:{name:'Avoided incarceration',cat:'Avoided social costs',
+       meta:'Cost per inmate/year · Argentina Federal Prison (PPP USD)',note:'SPF / Ministry of Justice AR 2024'},
+   value:7800,unit:'USD/persona/año'},
+  {id:'sc-02-mex',domain:'sc',cat:'avoided',scope:'MEX',
+   es:{name:'Privación de libertad evitada',cat:'Costos sociales evitados',
+       meta:'Costo por interno/año · OADPRS México (PPP USD, 2024)',note:'OADPRS / SEGOB México 2024'},
+   en:{name:'Avoided incarceration',cat:'Avoided social costs',
+       meta:'Cost per inmate/year · Mexico federal system (PPP USD)',note:'OADPRS / SEGOB Mexico 2024'},
+   value:9200,unit:'USD/persona/año'},
+  {id:'sc-02-ury',domain:'sc',cat:'avoided',scope:'URY',
+   es:{name:'Privación de libertad evitada',cat:'Costos sociales evitados',
+       meta:'Costo por interno/año · INR Uruguay (PPP USD, 2024)',note:'INR / Ministerio del Interior UY 2024'},
+   en:{name:'Avoided incarceration',cat:'Avoided social costs',
+       meta:'Cost per inmate/year · Uruguay INR (PPP USD, 2024)',note:'INR / Ministry of Interior UY 2024'},
+   value:14500,unit:'USD/persona/año'},
+  {id:'sc-02-col',domain:'sc',cat:'avoided',scope:'COL',
+   es:{name:'Privación de libertad evitada',cat:'Costos sociales evitados',
+       meta:'Costo por interno/año · INPEC Colombia (PPP USD, 2024)',note:'INPEC / Ministerio de Justicia COL 2024'},
+   en:{name:'Avoided incarceration',cat:'Avoided social costs',
+       meta:'Cost per inmate/year · Colombia INPEC (PPP USD, 2024)',note:'INPEC / Ministry of Justice COL 2024'},
+   value:6200,unit:'USD/persona/año'},
+  {id:'sc-02-chl',domain:'sc',cat:'avoided',scope:'CHL',
+   es:{name:'Privación de libertad evitada',cat:'Costos sociales evitados',
+       meta:'Costo por interno/año · Gendarmería Chile (PPP USD, 2024)',note:'Gendarmería / Min. Justicia CHL 2024'},
+   en:{name:'Avoided incarceration',cat:'Avoided social costs',
+       meta:'Cost per inmate/year · Chile Gendarmería (PPP USD, 2024)',note:'Gendarmería / Min. Justice CHL 2024'},
+   value:12000,unit:'USD/persona/año'},
+  {id:'sc-02-per',domain:'sc',cat:'avoided',scope:'PER',
+   es:{name:'Privación de libertad evitada',cat:'Costos sociales evitados',
+       meta:'Costo por interno/año · INPE Perú (PPP USD, 2024)',note:'INPE / Min. Justicia PER 2024'},
+   en:{name:'Avoided incarceration',cat:'Avoided social costs',
+       meta:'Cost per inmate/year · Peru INPE (PPP USD, 2024)',note:'INPE / Ministry of Justice PER 2024'},
+   value:5500,unit:'USD/persona/año'},
+  {id:'sc-01-col',domain:'sc',cat:'avoided',scope:'COL',
+   es:{name:'Internación hospitalaria evitada',cat:'Costos sociales evitados',
+       meta:'Costo promedio internación · sistema público Colombia',note:'Min. Salud Colombia / OPS 2024'},
+   en:{name:'Avoided hospital admission',cat:'Avoided social costs',
+       meta:'Average hospitalization cost · Colombia public system',note:'Min. Health Colombia / PAHO 2024'},
+   value:1400,unit:'USD/evento'},
+  {id:'sc-01-chl',domain:'sc',cat:'avoided',scope:'CHL',
+   es:{name:'Internación hospitalaria evitada',cat:'Costos sociales evitados',
+       meta:'Costo promedio internación · sistema público Chile (FONASA)',note:'FONASA / Min. Salud CHL 2024'},
+   en:{name:'Avoided hospital admission',cat:'Avoided social costs',
+       meta:'Average hospitalization cost · Chile public system (FONASA)',note:'FONASA / Min. Health CHL 2024'},
+   value:2800,unit:'USD/evento'},
+  {id:'sc-01-per',domain:'sc',cat:'avoided',scope:'PER',
+   es:{name:'Internación hospitalaria evitada',cat:'Costos sociales evitados',
+       meta:'Costo promedio internación · sistema público Perú (SIS/EsSalud)',note:'MINSA / SIS Perú 2024'},
+   en:{name:'Avoided hospital admission',cat:'Avoided social costs',
+       meta:'Average hospitalization cost · Peru public system (SIS/EsSalud)',note:'MINSA / SIS Peru 2024'},
+   value:1100,unit:'USD/evento'},
+  {id:'sc-03',domain:'sc',cat:'avoided',scope:'LATAM',
+   es:{name:'Embarazo adolescente no deseado evitado',cat:'Costos sociales evitados',
+       meta:'Costo social total por embarazo adolescente · LATAM',note:'Guttmacher / BID 2023'},
+   en:{name:'Avoided unplanned adolescent pregnancy',cat:'Avoided social costs',
+       meta:'Total social cost of adolescent pregnancy · LATAM',note:'Guttmacher / IDB 2023'},
+   value:4200,unit:'USD/evento (una vez)'},
+  {id:'sc-04',domain:'sc',cat:'avoided',scope:'LATAM',
+   es:{name:'Violencia urbana evitada',cat:'Costos sociales evitados',
+       meta:'Costos directos e indirectos de violencia urbana · LATAM',note:'BID / UNODC 2023'},
+   en:{name:'Avoided urban violence',cat:'Avoided social costs',
+       meta:'Direct and indirect costs of urban violence · LATAM',note:'IDB / UNODC 2023'},
+   value:1800,unit:'USD/persona/año'},
+  {id:'sc-05',domain:'sc',cat:'avoided',scope:'LATAM',
+   es:{name:'Reducción de ausentismo laboral',cat:'Costos sociales evitados',
+       meta:'Valor de días de trabajo recuperados · LATAM',note:'OIT 2024'},
+   en:{name:'Reduced workplace absenteeism',cat:'Avoided social costs',
+       meta:'Value of recovered workdays · LATAM',note:'ILO 2024'},
+   value:900,unit:'USD/persona/año'},
+  {id:'sc-06',domain:'sc',cat:'avoided',scope:'LATAM',
+   es:{name:'Uso de servicios de emergencia social evitado',cat:'Costos sociales evitados',
+       meta:'Costo de servicios de asistencia social de emergencia · LATAM',note:'OCDE / BID 2023'},
+   en:{name:'Avoided emergency social services use',cat:'Avoided social costs',
+       meta:'Cost of emergency social assistance services · LATAM',note:'OECD / IDB 2023'},
+   value:1400,unit:'USD/persona/año'},
+  // ── CAPITAL SOCIAL · Ingresos fiscales ──
+  {id:'sc-07',domain:'sc',cat:'fiscal',scope:'LATAM',
+   es:{name:'Impuestos generados por formalización laboral',cat:'Ingresos fiscales',
+       meta:'Contribuciones fiscales por trabajador formalizado · LATAM',note:'CEPAL / OIT 2024'},
+   en:{name:'Tax revenue from labour formalisation',cat:'Fiscal revenue',
+       meta:'Fiscal contributions per formalised worker · LATAM',note:'ECLAC / ILO 2024'},
+   value:480,unit:'USD/persona/año'},
+  {id:'sc-08',domain:'sc',cat:'fiscal',scope:'LATAM',
+   es:{name:'Reducción dependencia de subsidios sociales',cat:'Ingresos fiscales',
+       meta:'Ahorro fiscal por reducción de beneficiarios · LATAM',note:'Banco Mundial 2023'},
+   en:{name:'Reduced social subsidy dependency',cat:'Fiscal revenue',
+       meta:'Fiscal savings from reduced subsidy recipients · LATAM',note:'World Bank 2023'},
+   value:720,unit:'USD/persona/año'},
+  // ── CAPITAL SOCIAL · Participación ──
+  {id:'sc-09',domain:'sc',cat:'civic',scope:'LATAM',
+   es:{name:'Voluntariado y participación comunitaria',cat:'Participación y cohesión',
+       meta:'Valor del tiempo voluntario (salario mínimo) · LATAM',note:'SOCAP / IAVE 2023'},
+   en:{name:'Volunteering and community participation',cat:'Participation & cohesion',
+       meta:'Value of volunteer time (minimum wage) · LATAM',note:'SOCAP / IAVE 2023'},
+   value:1200,unit:'USD/persona/año'},
+  {id:'sc-10',domain:'sc',cat:'civic',scope:'LATAM',
+   es:{name:'Fortalecimiento de organizaciones de la sociedad civil',cat:'Participación y cohesión',
+       meta:'Valor de capacidades organizacionales desarrolladas',note:'FSG / WINGS 2023'},
+   en:{name:'Civil society organisation strengthening',cat:'Participation & cohesion',
+       meta:'Value of organisational capacities built',note:'FSG / WINGS 2023'},
+   value:800,unit:'USD/organización/año'},
+  {id:'sc-11',domain:'sc',cat:'civic',scope:'LATAM',
+   es:{name:'Integración de comunidades migrantes/refugiadas',cat:'Participación y cohesión',
+       meta:'Valor económico de integración laboral y social · LATAM',note:'ACNUR / BID 2024'},
+   en:{name:'Migrant/refugee community integration',cat:'Participation & cohesion',
+       meta:'Economic value of labour and social integration · LATAM',note:'UNHCR / IDB 2024'},
+   value:2600,unit:'USD/persona/año'},
+  // ── CAPITAL NATURAL ──
+  {id:'nc-01',domain:'nc',cat:'climate',scope:'Global',
+   es:{name:'Tonelada de CO₂ equivalente evitada',cat:'Cambio climático',
+       meta:'Costo social del carbono ajustado 2024 · Global',note:'EPA / Stern Review 2024'},
+   en:{name:'Tonne of CO₂ equivalent avoided',cat:'Climate change',
+       meta:'Social cost of carbon 2024 adjusted · Global',note:'EPA / Stern Review 2024'},
+   value:51,unit:'USD/tonelada CO₂eq'},
+  {id:'nc-02',domain:'nc',cat:'land',scope:'LATAM',
+   es:{name:'Hectárea de bosque conservada',cat:'Suelo y biodiversidad',
+       meta:'Servicios ecosistémicos de bosques tropicales · LATAM',note:'IPBES / IUCN 2023'},
+   en:{name:'Hectare of forest conserved',cat:'Land & biodiversity',
+       meta:'Ecosystem services of tropical forests · LATAM',note:'IPBES / IUCN 2023'},
+   value:2100,unit:'USD/ha/año'},
+  {id:'nc-03',domain:'nc',cat:'water',scope:'LATAM',
+   es:{name:'Acceso a saneamiento mejorado',cat:'Agua y saneamiento',
+       meta:'Reducción de enfermedades y costos de salud · LATAM',note:'OMS / UNICEF 2023'},
+   en:{name:'Improved sanitation access',cat:'Water & sanitation',
+       meta:'Disease reduction and associated health cost savings · LATAM',note:'WHO / UNICEF 2023'},
+   value:380,unit:'USD/persona/año'},
+  {id:'nc-04',domain:'nc',cat:'land',scope:'LATAM',
+   es:{name:'Reducción de residuos sólidos',cat:'Suelo y biodiversidad',
+       meta:'Costo de disposición y daños ambientales evitados · LATAM',note:'Banco Mundial 2023'},
+   en:{name:'Solid waste reduction',cat:'Land & biodiversity',
+       meta:'Avoided disposal costs and environmental damages · LATAM',note:'World Bank 2023'},
+   value:45,unit:'USD/tonelada'},
+  {id:'nc-05',domain:'nc',cat:'land',scope:'LATAM',
+   es:{name:'Restauración de suelos agrícolas',cat:'Suelo y biodiversidad',
+       meta:'Valor del incremento de productividad agrícola · LATAM',note:'FAO 2024'},
+   en:{name:'Agricultural soil restoration',cat:'Land & biodiversity',
+       meta:'Value of increased agricultural productivity · LATAM',note:'FAO 2024'},
+   value:280,unit:'USD/ha/año'},
+  {id:'nc-06',domain:'nc',cat:'land',scope:'Global',
+   es:{name:'Protección de biodiversidad (especie en riesgo)',cat:'Suelo y biodiversidad',
+       meta:'Valor de servicios ecosistémicos por especie protegida',note:'IUCN / TEEB 2023'},
+   en:{name:'Biodiversity protection (threatened species)',cat:'Land & biodiversity',
+       meta:'Ecosystem service value per protected species',note:'IUCN / TEEB 2023'},
+   value:650,unit:'USD/especie/año'},
+  {id:'nc-07',domain:'nc',cat:'climate',scope:'LATAM',
+   es:{name:'Energía renovable generada / acceso energético',cat:'Cambio climático',
+       meta:'Valor de desplazamiento de energía fósil + acceso · LATAM',note:'IRENA / BID 2024'},
+   en:{name:'Renewable energy generated / energy access',cat:'Climate change',
+       meta:'Value of fossil fuel displacement and access · LATAM',note:'IRENA / IDB 2024'},
+   value:120,unit:'USD/MWh'},
+
+  // ── MEDIO AMBIENTE / ENVIRONMENT ─────────────────────────────────────────
+  {id:'env-01',domain:'env',cat:'climate',scope:'LATAM',
+   es:{name:'Reducción de emisiones GEI por cambio de comportamiento',cat:'Clima',
+       meta:'Valor social del carbono evitado · LATAM',note:'BID / CEPAL 2024'},
+   en:{name:'GHG emission reduction from behavior change',cat:'Climate',
+       meta:'Social cost of avoided carbon · LATAM',note:'IDB / ECLAC 2024'},
+   value:18,unit:'USD/tCO2eq'},
+  {id:'env-02',domain:'env',cat:'employment',scope:'LATAM',
+   es:{name:'Empleo verde formal generado',cat:'Empleo',
+       meta:'Valor social de empleo sostenible + salud laboral · LATAM',note:'OIT / BID 2024'},
+   en:{name:'Green formal jobs created',cat:'Employment',
+       meta:'Social value of sustainable employment and occupational health · LATAM',note:'ILO / IDB 2024'},
+   value:2600,unit:'USD/persona/año'},
+  {id:'env-03',domain:'env',cat:'urban',scope:'LATAM',
+   es:{name:'Árboles urbanos plantados',cat:'Entorno urbano',
+       meta:'Servicios ecosistémicos urbanos: sombra, aire, bienestar · LATAM',note:'ONU Hábitat / BID 2023'},
+   en:{name:'Urban trees planted',cat:'Urban environment',
+       meta:'Urban ecosystem services: shade, air quality, wellbeing · LATAM',note:'UN Habitat / IDB 2023'},
+   value:72,unit:'USD/árbol/año'},
+  {id:'env-04',domain:'env',cat:'waste',scope:'LATAM',
+   es:{name:'Reciclaje / compostaje comunitario',cat:'Residuos',
+       meta:'Valor de reducción de residuos + ingresos recuperación · LATAM',note:'PNUMA / BID 2024'},
+   en:{name:'Community recycling / composting',cat:'Waste',
+       meta:'Value of waste reduction and materials recovery income · LATAM',note:'UNEP / IDB 2024'},
+   value:75,unit:'USD/tonelada'},
+  {id:'env-05',domain:'env',cat:'education',scope:'LATAM',
+   es:{name:'Educación ambiental y conciencia ecológica',cat:'Educación ambiental',
+       meta:'Valor de cambio actitudinal y conductual hacia el medioambiente · LATAM',note:'UNESCO / PNUMA 2023'},
+   en:{name:'Environmental education and ecological awareness',cat:'Environmental education',
+       meta:'Value of attitudinal and behavioral change towards environment · LATAM',note:'UNESCO / UNEP 2023'},
+   value:720,unit:'USD/persona/año'},
+  {id:'env-06',domain:'env',cat:'water',scope:'LATAM',
+   es:{name:'Calidad de agua en cuencas hidrográficas',cat:'Agua',
+       meta:'Valor de filtración natural + acceso agua limpia · LATAM',note:'GWP / BID 2024'},
+   en:{name:'Watershed water quality improvement',cat:'Water',
+       meta:'Value of natural filtration and clean water access · LATAM',note:'GWP / IDB 2024'},
+   value:520,unit:'USD/ha cuenca/año'},
+  {id:'env-07',domain:'env',cat:'energy',scope:'LATAM',
+   es:{name:'Acceso a energía limpia para cocina',cat:'Energía',
+       meta:'Reducción humo intradomiciliario + GEI + tiempo · LATAM',note:'BM / IRENA 2024'},
+   en:{name:'Clean cooking energy access',cat:'Energy',
+       meta:'Indoor smoke reduction, GHG savings and time savings · LATAM',note:'WB / IRENA 2024'},
+   value:180,unit:'USD/hogar/año'},
+
+  // ── ENV por país ──────────────────────────────────────────────────────────
+  {id:'env-01-col',domain:'env',cat:'climate',scope:'COL',
+   es:{name:'Reducción emisiones GEI (Colombia)',cat:'Clima',
+       meta:'Costo social del carbono ajustado · Colombia',note:'DNP / MinAmbiente 2024'},
+   en:{name:'GHG emission reduction (Colombia)',cat:'Climate',
+       meta:'Adjusted social cost of carbon · Colombia',note:'DNP / MinAmbiente 2024'},
+   value:16,unit:'USD/tCO2eq'},
+  {id:'env-01-chl',domain:'env',cat:'climate',scope:'CHL',
+   es:{name:'Reducción emisiones GEI (Chile)',cat:'Clima',
+       meta:'Costo social del carbono · Chile',note:'MMA Chile 2024'},
+   en:{name:'GHG emission reduction (Chile)',cat:'Climate',
+       meta:'Social cost of carbon · Chile',note:'MMA Chile 2024'},
+   value:22,unit:'USD/tCO2eq'},
+  {id:'env-01-per',domain:'env',cat:'climate',scope:'PER',
+   es:{name:'Reducción emisiones GEI (Perú)',cat:'Clima',
+       meta:'Costo social del carbono · Perú',note:'MINAM Perú 2024'},
+   en:{name:'GHG emission reduction (Peru)',cat:'Climate',
+       meta:'Social cost of carbon · Peru',note:'MINAM Peru 2024'},
+   value:14,unit:'USD/tCO2eq'},
+  {id:'env-02-col',domain:'env',cat:'employment',scope:'COL',
+   es:{name:'Empleo verde formal (Colombia)',cat:'Empleo',
+       meta:'Valor empleo sostenible · Colombia',note:'MinTrabajo / BID 2024'},
+   en:{name:'Green formal jobs (Colombia)',cat:'Employment',
+       meta:'Value of sustainable employment · Colombia',note:'MinTrabajo / IDB 2024'},
+   value:2100,unit:'USD/persona/año'},
+  {id:'env-02-chl',domain:'env',cat:'employment',scope:'CHL',
+   es:{name:'Empleo verde formal (Chile)',cat:'Empleo',
+       meta:'Valor empleo sostenible · Chile',note:'MinTrabajo CHL / BID 2024'},
+   en:{name:'Green formal jobs (Chile)',cat:'Employment',
+       meta:'Value of sustainable employment · Chile',note:'MinTrabajo CHL / IDB 2024'},
+   value:3400,unit:'USD/persona/año'},
+
+  // ── Más proxies HC por país ───────────────────────────────────────────────
+  {id:'hc-03-col',domain:'hc',cat:'gender',scope:'COL',
+   es:{name:'Brecha de género en empleo / liderazgo (Colombia)',cat:'Género',
+       meta:'Incremento de productividad por paridad · Colombia',note:'ONU Mujeres / DANE 2024'},
+   en:{name:'Gender gap in employment / leadership (Colombia)',cat:'Gender',
+       meta:'Productivity increase from gender parity · Colombia',note:'UN Women / DANE 2024'},
+   value:1200,unit:'USD/persona/año'},
+  {id:'hc-03-chl',domain:'hc',cat:'gender',scope:'CHL',
+   es:{name:'Brecha de género en empleo / liderazgo (Chile)',cat:'Género',
+       meta:'Incremento de productividad por paridad · Chile',note:'ONU Mujeres / INE 2024'},
+   en:{name:'Gender gap in employment / leadership (Chile)',cat:'Gender',
+       meta:'Productivity increase from gender parity · Chile',note:'UN Women / INE 2024'},
+   value:2400,unit:'USD/persona/año'},
+  {id:'hc-03-per',domain:'hc',cat:'gender',scope:'PER',
+   es:{name:'Brecha de género en empleo / liderazgo (Perú)',cat:'Género',
+       meta:'Incremento de productividad por paridad · Perú',note:'ONU Mujeres / INEI 2024'},
+   en:{name:'Gender gap in employment / leadership (Peru)',cat:'Gender',
+       meta:'Productivity increase from gender parity · Peru',note:'UN Women / INEI 2024'},
+   value:1000,unit:'USD/persona/año'},
+  {id:'hc-10-col',domain:'hc',cat:'health',scope:'COL',
+   es:{name:'AVAD evitado / año de vida saludable (Colombia)',cat:'Salud',
+       meta:'Valor estadístico del año de vida saludable · Colombia',note:'Minsalud Colombia 2024'},
+   en:{name:'DALY averted / healthy life year (Colombia)',cat:'Health',
+       meta:'Statistical value of a healthy life year · Colombia',note:'Minsalud Colombia 2024'},
+   value:3000,unit:'USD/AVAD'},
+  {id:'hc-10-chl',domain:'hc',cat:'health',scope:'CHL',
+   es:{name:'AVAD evitado / año de vida saludable (Chile)',cat:'Salud',
+       meta:'Valor estadístico del año de vida saludable · Chile',note:'Minsal Chile 2024'},
+   en:{name:'DALY averted / healthy life year (Chile)',cat:'Health',
+       meta:'Statistical value of a healthy life year · Chile',note:'Minsal Chile 2024'},
+   value:5200,unit:'USD/AVAD'},
+  {id:'hc-10-per',domain:'hc',cat:'health',scope:'PER',
+   es:{name:'AVAD evitado / año de vida saludable (Perú)',cat:'Salud',
+       meta:'Valor estadístico del año de vida saludable · Perú',note:'MINSA Perú 2024'},
+   en:{name:'DALY averted / healthy life year (Peru)',cat:'Health',
+       meta:'Statistical value of a healthy life year · Peru',note:'MINSA Peru 2024'},
+   value:2400,unit:'USD/AVAD'},
+  {id:'hc-11-col',domain:'hc',cat:'mental',scope:'COL',
+   es:{name:'Salud mental y bienestar psicosocial (Colombia)',cat:'Salud mental',
+       meta:'Valor de reducción de carga mental en productividad y calidad de vida · Colombia',note:'Minsalud / OPS 2024'},
+   en:{name:'Mental health and psychosocial wellbeing (Colombia)',cat:'Mental health',
+       meta:'Value of mental burden reduction in productivity and quality of life · Colombia',note:'Minsalud / PAHO 2024'},
+   value:1800,unit:'USD/persona/año'},
+  {id:'hc-11-chl',domain:'hc',cat:'mental',scope:'CHL',
+   es:{name:'Salud mental y bienestar psicosocial (Chile)',cat:'Salud mental',
+       meta:'Valor de reducción de carga mental · Chile',note:'Minsal / OPS 2024'},
+   en:{name:'Mental health and psychosocial wellbeing (Chile)',cat:'Mental health',
+       meta:'Value of mental burden reduction · Chile',note:'Minsal / PAHO 2024'},
+   value:3400,unit:'USD/persona/año'},
+  {id:'hc-11-per',domain:'hc',cat:'mental',scope:'PER',
+   es:{name:'Salud mental y bienestar psicosocial (Perú)',cat:'Salud mental',
+       meta:'Valor de reducción de carga mental · Perú',note:'MINSA / OPS 2024'},
+   en:{name:'Mental health and psychosocial wellbeing (Peru)',cat:'Mental health',
+       meta:'Value of mental burden reduction · Peru',note:'MINSA / PAHO 2024'},
+   value:1600,unit:'USD/persona/año'},
+]
+
+// ─────────────────────────────────────────────
+// TRANSLATIONS
+// ─────────────────────────────────────────────
+const T = {
+  es: {
+    toolLabel:'Calculadora SROI',
+    steps:['Proyecto','Partes interesadas','Resultados','Ajustes','SROI'],
+    back:'Anterior', next:'Siguiente', finish:'Calcular SROI', step:'Paso', of:'de',
+    s1h:'Información del proyecto', s1p:'Describí el proyecto o programa e ingresá la inversión total en el período de análisis.',
+    fProjName:'Nombre del proyecto', fProjOrg:'Organización ejecutora', fProjYear:'Año de inicio',
+    fPeriod:'Período de evaluación (años)', fInv:'Inversión total', fCurr:'Moneda',
+    fDisc:'Tasa de descuento (%)', fDiscNote:'Valor temporal del dinero. La OCDE recomienda 3.5% como estándar internacional.',
+    phProjName:'Ej: Programa de Empleo Juvenil', phProjOrg:'Ej: Fundación Crecer',
+    s2h:'Partes interesadas', s2p:'Identificá los grupos de personas que se ven impactados positivamente por el programa.',
+    fShName:'Nombre del grupo', fShDesc:'Descripción',
+    phShName:'Ej: Jóvenes participantes', phShDesc:'Ej: Jóvenes de 18-25 años que completaron el programa',
+    addSh:'+ Agregar parte interesada', noSh:'Todavía no hay partes interesadas.', noShSub:'Hacé clic para agregar la primera.',
+    s3h:'Resultados esperados', s3p:'Para cada grupo, describí los cambios que genera el programa y asignales un valor económico de referencia desde la biblioteca.',
+    fOutName:'Resultado', fOutDesc:'Descripción', fPeople:'Personas beneficiadas',
+    fProxy:'Valor unitario', fProxyNote:'Fuente',
+    fDuration:'Duración (años)',
+    phOutName:'Ej: Aumento de ingreso mensual', phOutDesc:'Ej: Inserción en empleo formal',
+    phProxyNote:'Ej: OIT Global Wage Report 2024',
+    btnProxy:'Biblioteca de resultados', addOut:'+ Agregar resultado',
+    noOut:'No hay resultados para este grupo.', noSh2:'Primero agregá partes interesadas.',
+    modalTitle:'Biblioteca de resultados', modalSub:'Elegí un resultado de referencia para este grupo. El valor unitario se completa automáticamente.',
+    modalCancel:'Cancelar',
+    sOutcomeData:'Resultado', sValorizacion:'Valorización',
+    domAll:'Todos', domHc:'Capital Humano', domSc:'Capital Social', domNc:'Capital Natural', domEnv:'Medio Ambiente',
+    s5shChart:'VALOR SOCIAL POR PARTE INTERESADA',
+    s4h:'Ajustes de impacto', s4p:'Estos factores garantizan que el SROI sea conservador y creíble.',
+    aDead:'Peso muerto (deadweight)', aDeadH:'¿Qué porcentaje de este resultado habría ocurrido igualmente sin el programa?',
+    aAttr:'Atribución', aAttrH:'¿Qué porcentaje del cambio es atribuible directamente a tu programa?',
+    aDisp:'Desplazamiento', aDispH:'¿El programa genera efectos negativos en otras personas o grupos?',
+    aDrop:'Decaimiento anual', aDropH:'¿En qué porcentaje disminuye el impacto en cada año siguiente al primero?',
+    noAdj:'No hay resultados para ajustar. Volvé al paso anterior.',
+    s5h:'Tu SROI', s5inv:'Inversión total', s5val:'Valor social total', s5net:'Valor neto',
+    s5by:'Por cada', s5of:'invertido, el programa genera', s5ofEnd:'de valor social.',
+    s5chart:'VALOR PRESENTE POR RESULTADO', s5tbl:'Desglose completo',
+    s5Sh:'Parte interesada', s5Out:'Resultado', s5PV:'Valor presente', s5Pct:'% del total',
+    s5Total:'Total', s5New:'Nuevo cálculo', s5Print:'Imprimir / PDF',
+    s5warn:'El valor social calculado es cero. Revisá los datos y los ajustes.',
+    s5Save:'💾 Guardar proyecto', s5Saved:'✓ Proyecto guardado',
+    projs:'Proyectos', projsTitle:'📂 Proyectos guardados',
+    projsSub:'Cargá un cálculo anterior o guardá el actual',
+    projLoad:'Cargar', projDel:'Eliminar', projExport:'⬇ JSON',
+    projEmpty:'No hay proyectos guardados todavía.',
+    projEmptySub:'Completá un cálculo y guardalo desde el Paso 5.',
+    projLoaded:'✓ Proyecto cargado',
+    projDeleteConfirm:'¿Eliminar este proyecto guardado?',
+    projOverwrite:'¿Reemplazar el proyecto guardado anterior?',
+    proxyApplied:'Referencia aplicada',
+    s5comp:'📊 Comparar escenarios', s5hide:'Ocultar comparador',
+    scA:'Escenario A', scB:'Escenario B',
+    scBaseLbl:'Base (actual)', scAltLbl:'Alternativo',
+    scPresetCons:'Conservador', scPresetOpt:'Optimista', scPresetNeutral:'Neutro',
+    scGlobal:'Ajustes globales — Escenario B',
+    scDead:'Peso muerto', scAttr:'Atribución', scDisp:'Desplazamiento', scDrop:'Decaimiento',
+    scDiff:'diferencia vs. base',
+    scChartTitle:'COMPARACIÓN POR RESULTADO',
+    interp:{lt1:'El valor social generado no supera la inversión. Revisá los proxys y ajustes de impacto.',
+      '1-2':'El programa genera más valor del que cuesta. Un SROI entre 1:1 y 2:1 es un punto de partida sólido.',
+      '2-4':'Retorno social saludable. El programa crea significativamente más valor que el costo de los recursos.',
+      '4-10':'Retorno social muy alto. Asegurate de que los proxys sean conservadores y estén bien fundamentados.',
+      gt10:'SROI excepcional. Un ratio tan alto puede indicar supuestos optimistas — revisá deadweight y atribución.'}
+  },
+  en: {
+    toolLabel:'SROI Calculator',
+    steps:['Project','Stakeholders','Outcomes','Adjustments','SROI'],
+    back:'Back', next:'Next', finish:'Calculate SROI', step:'Step', of:'of',
+    s1h:'Project information', s1p:'Describe the social project and enter the total investment over the evaluation period.',
+    fProjName:'Project name', fProjOrg:'Implementing organisation', fProjYear:'Start year',
+    fPeriod:'Evaluation period (years)', fInv:'Total investment', fCurr:'Currency',
+    fDisc:'Discount rate (%)', fDiscNote:'Time value of money. OECD recommends 3.5% as international standard.',
+    phProjName:'e.g. Youth Employment Programme', phProjOrg:'e.g. Crecer Foundation',
+    s2h:'Stakeholders', s2p:'Identify groups of people who are positively impacted by the programme.',
+    fShName:'Group name', fShDesc:'Description',
+    phShName:'e.g. Youth participants', phShDesc:'e.g. Young people aged 18–25 who completed the programme',
+    addSh:'+ Add stakeholder', noSh:'No stakeholders added yet.', noShSub:'Click below to add the first one.',
+    s3h:'Outcomes', s3p:'For each group, describe the changes the programme creates and assign a reference value from the library.',
+    fOutName:'Outcome', fOutDesc:'Description', fPeople:'People benefiting',
+    fProxy:'Unit value', fProxyNote:'Source',
+    fDuration:'Duration (years)',
+    phOutName:'e.g. Increased monthly income', phOutDesc:'e.g. Formal job placement',
+    phProxyNote:'e.g. ILO Global Wage Report 2024',
+    btnProxy:'Results library', addOut:'+ Add outcome',
+    noOut:'No outcomes for this group yet.', noSh2:'Please add stakeholders first.',
+    modalTitle:'Results library', modalSub:'Choose a reference outcome for this group. The unit value is filled automatically.',
+    modalCancel:'Cancel',
+    sOutcomeData:'Outcome', sValorizacion:'Valuation',
+    domAll:'All', domHc:'Human Capital', domSc:'Social Capital', domNc:'Natural Capital', domEnv:'Environment',
+    s5shChart:'SOCIAL VALUE BY STAKEHOLDER',
+    s4h:'Impact adjustments', s4p:'These factors ensure the SROI is conservative and credible.',
+    aDead:'Deadweight', aDeadH:'What percentage of this outcome would have happened without the programme?',
+    aAttr:'Attribution', aAttrH:'What percentage of the change is directly attributable to your programme?',
+    aDisp:'Displacement', aDispH:'Does the programme generate any negative impact on other groups?',
+    aDrop:'Annual drop-off', aDropH:'By what percentage does the impact reduce each year after the first?',
+    noAdj:'No outcomes to adjust. Go back to the previous step.',
+    s5h:'Your SROI', s5inv:'Total investment', s5val:'Total social value', s5net:'Net social value',
+    s5by:'For every', s5of:'invested, the programme generates', s5ofEnd:'of social value.',
+    s5chart:'PRESENT VALUE BY OUTCOME', s5tbl:'Full breakdown',
+    s5Sh:'Stakeholder', s5Out:'Outcome', s5PV:'Present value', s5Pct:'% of total',
+    s5Total:'Total', s5New:'New calculation', s5Print:'Print / PDF',
+    s5warn:'Calculated social value is zero. Please review inputs and adjustments.',
+    s5Save:'💾 Save project', s5Saved:'✓ Project saved',
+    projs:'Projects', projsTitle:'📂 Saved projects',
+    projsSub:'Load a previous calculation or save the current one',
+    projLoad:'Load', projDel:'Delete', projExport:'⬇ JSON',
+    projEmpty:'No saved projects yet.',
+    projEmptySub:'Complete a calculation and save it from Step 5.',
+    projLoaded:'✓ Project loaded',
+    projDeleteConfirm:'Delete this saved project?',
+    projOverwrite:'Replace the previously saved project?',
+    proxyApplied:'Reference applied',
+    s5comp:'📊 Compare scenarios', s5hide:'Hide comparator',
+    scA:'Scenario A', scB:'Scenario B',
+    scBaseLbl:'Base (current)', scAltLbl:'Alternative',
+    scPresetCons:'Conservative', scPresetOpt:'Optimistic', scPresetNeutral:'Neutral',
+    scGlobal:'Global adjustments — Scenario B',
+    scDead:'Deadweight', scAttr:'Attribution', scDisp:'Displacement', scDrop:'Drop-off',
+    scDiff:'difference vs. base',
+    scChartTitle:'COMPARISON BY OUTCOME',
+    interp:{lt1:'Social value generated does not exceed the investment. Review proxies and impact adjustments.',
+      '1-2':'The programme generates more value than it costs. An SROI between 1:1 and 2:1 is a solid starting point.',
+      '2-4':'Healthy social return. The programme creates significantly more value than the cost of resources.',
+      '4-10':'Very high social return. Ensure proxies are conservative and well-evidenced.',
+      gt10:'Exceptional SROI. Such a high ratio may indicate optimistic assumptions — review deadweight and attribution carefully.'}
+  },
+  pt: {
+    toolLabel:'Calculadora SROI',
+    steps:['Projeto','Partes interessadas','Resultados','Ajustes','SROI'],
+    back:'Anterior', next:'Próximo', finish:'Calcular SROI', step:'Etapa', of:'de',
+    s1h:'Informações do projeto', s1p:'Descreva o projeto ou programa e informe o investimento total no período de análise.',
+    fProjName:'Nome do projeto', fProjOrg:'Organização executora', fProjYear:'Ano de início',
+    fPeriod:'Período de avaliação (anos)', fInv:'Investimento total', fCurr:'Moeda',
+    fDisc:'Taxa de desconto (%)', fDiscNote:'Valor do dinheiro no tempo. A OCDE recomenda 3,5% como padrão internacional.',
+    phProjName:'Ex: Programa de Emprego Jovem', phProjOrg:'Ex: Fundação Crescer',
+    s2h:'Partes interessadas', s2p:'Identifique os grupos de pessoas que são positivamente impactados pelo programa.',
+    fShName:'Nome do grupo', fShDesc:'Descrição',
+    phShName:'Ex: Jovens participantes', phShDesc:'Ex: Jovens de 18 a 25 anos que concluíram o programa',
+    addSh:'+ Adicionar parte interessada', noSh:'Nenhuma parte interessada adicionada.', noShSub:'Clique abaixo para adicionar a primeira.',
+    s3h:'Resultados esperados', s3p:'Para cada grupo, descreva as mudanças que o programa gera e atribua um valor de referência da biblioteca.',
+    fOutName:'Resultado', fOutDesc:'Descrição', fPeople:'Pessoas beneficiadas',
+    fProxy:'Valor unitário', fProxyNote:'Fonte',
+    fDuration:'Duração (anos)',
+    phOutName:'Ex: Aumento de renda mensal', phOutDesc:'Ex: Inserção no emprego formal',
+    phProxyNote:'Ex: OIT Global Wage Report 2024',
+    btnProxy:'Biblioteca de resultados', addOut:'+ Adicionar resultado',
+    noOut:'Nenhum resultado para este grupo.', noSh2:'Primeiro adicione partes interessadas.',
+    modalTitle:'Biblioteca de resultados', modalSub:'Escolha um resultado de referência para este grupo. O valor unitário é preenchido automaticamente.',
+    modalCancel:'Cancelar',
+    sOutcomeData:'Resultado', sValorizacion:'Valorização',
+    domAll:'Todos', domHc:'Capital Humano', domSc:'Capital Social', domNc:'Capital Natural', domEnv:'Meio Ambiente',
+    s5shChart:'VALOR SOCIAL POR PARTE INTERESSADA',
+    s4h:'Ajustes de impacto', s4p:'Esses fatores garantem que o SROI seja conservador e confiável.',
+    aDead:'Peso morto (deadweight)', aDeadH:'Qual percentual deste resultado teria ocorrido mesmo sem o programa?',
+    aAttr:'Atribuição', aAttrH:'Qual percentual da mudança é diretamente atribuível ao seu programa?',
+    aDisp:'Deslocamento', aDispH:'O programa gera efeitos negativos sobre outras pessoas ou grupos?',
+    aDrop:'Decaimento anual', aDropH:'Em que percentual o impacto diminui a cada ano após o primeiro?',
+    noAdj:'Nenhum resultado para ajustar. Volte à etapa anterior.',
+    s5h:'Seu SROI', s5inv:'Investimento total', s5val:'Valor social total', s5net:'Valor líquido',
+    s5by:'Para cada', s5of:'investido, o programa gera', s5ofEnd:'em valor social.',
+    s5chart:'VALOR PRESENTE POR RESULTADO', s5tbl:'Detalhamento completo',
+    s5Sh:'Parte interessada', s5Out:'Resultado', s5PV:'Valor presente', s5Pct:'% do total',
+    s5Total:'Total', s5New:'Novo cálculo', s5Print:'Imprimir / PDF',
+    s5warn:'O valor social calculado é zero. Verifique os dados e os ajustes.',
+    s5Save:'💾 Salvar projeto', s5Saved:'✓ Projeto salvo',
+    projs:'Projetos', projsTitle:'📂 Projetos salvos',
+    projsSub:'Carregue um cálculo anterior ou salve o atual',
+    projLoad:'Carregar', projDel:'Excluir', projExport:'⬇ JSON',
+    projEmpty:'Nenhum projeto salvo ainda.',
+    projEmptySub:'Complete um cálculo e salve-o na Etapa 5.',
+    projLoaded:'✓ Projeto carregado',
+    projDeleteConfirm:'Excluir este projeto salvo?',
+    projOverwrite:'Substituir o projeto salvo anteriormente?',
+    proxyApplied:'Referência aplicada',
+    s5comp:'📊 Comparar cenários', s5hide:'Ocultar comparador',
+    scA:'Cenário A', scB:'Cenário B',
+    scBaseLbl:'Base (atual)', scAltLbl:'Alternativo',
+    scPresetCons:'Conservador', scPresetOpt:'Otimista', scPresetNeutral:'Neutro',
+    scGlobal:'Ajustes globais — Cenário B',
+    scDead:'Peso morto', scAttr:'Atribuição', scDisp:'Deslocamento', scDrop:'Decaimento',
+    scDiff:'diferença vs. base',
+    scChartTitle:'COMPARAÇÃO POR RESULTADO',
+    interp:{lt1:'O valor social gerado não supera o investimento. Revise os proxies e os ajustes de impacto.',
+      '1-2':'O programa gera mais valor do que custa. Um SROI entre 1:1 e 2:1 é um bom ponto de partida.',
+      '2-4':'Retorno social saudável. O programa cria significativamente mais valor do que o custo dos recursos.',
+      '4-10':'Retorno social muito alto. Certifique-se de que os proxies são conservadores e bem fundamentados.',
+      gt10:'SROI excepcional. Uma proporção tão alta pode indicar premissas otimistas — revise peso morto e atribuição.'}
+  }
+}
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// STORAGE ADAPTER — localStorage ahora; intercambiable con Salesforce luego.
+//
+// Para integrar con Salesforce, reemplazá este objeto con llamadas a la API:
+//   list()     → SOQL: SELECT Id,Name,Organization__c,Saved_At__c,SROI_Ratio__c,
+//                        Stakeholder_Count__c,Outcome_Count__c,Period_Years__c,
+//                        Investment__c,Currency_Code__c
+//                       FROM SROI_Calculation__c ORDER BY Saved_At__c DESC
+//   save(r)    → r.sf_id ? updateSobjectRecord('SROI_Calculation__c', r.sf_id, fields)
+//                         : createSobjectRecord('SROI_Calculation__c', fields)
+//               donde fields = { Name:r.name, Organization__c:r.org, Year__c:r.year,
+//                 Period_Years__c:r.period, Investment__c:r.investment,
+//                 Currency_Code__c:r.currency, Discount_Rate__c:r.discountRate,
+//                 SROI_Ratio__c:r.sroi, Total_PV__c:r.totalPV, Net_Value__c:r.netValue,
+//                 Stakeholder_Count__c:r.stakeholderCount, Outcome_Count__c:r.outcomeCount,
+//                 Saved_At__c:r.savedAt, Version__c:r.version, Lang__c:r.lang,
+//                 JSON_Data__c: JSON.stringify(r.data) }
+//   get(id)    → find('SROI_Calculation__c', {Id: id}) — devuelve JSON_Data__c completo
+//   delete(id) → deleteSobjectRecord('SROI_Calculation__c', id)
+//
+// El campo JSON_Data__c (Long Text Area, 131072 chars) almacena el estado completo.
+// Los demás campos quedan indexados para reportería y dashboards en Salesforce.
+// ─────────────────────────────────────────────────────────────────────────────
+const StorageAdapter = (() => {
+  const KEY = 'sroi_projects_v1'
+  return {
+    list()        { try{ return JSON.parse(localStorage.getItem(KEY)||'[]') }catch(e){ return [] } },
+    save(rec)     { try{ const a=this.list(); const i=a.findIndex(p=>p.id===rec.id); i>=0?a[i]=rec:a.unshift(rec); localStorage.setItem(KEY,JSON.stringify(a)) }catch(e){} },
+    get(id)       { return this.list().find(p=>p.id===id)||null },
+    delete(id)    { try{ localStorage.setItem(KEY,JSON.stringify(this.list().filter(p=>p.id!==id))) }catch(e){} }
+  }
+})()
+
+let state = {
+  lang:'es', step:1, visited:new Set([1]),
+  project:{name:'',org:'',year:2026,period:3,investment:'',currency:'USD',discountRate:3.5},
+  stakeholders:[], outcomes:[], adjustments:{},
+  showComp:false,
+  scenB:{deadweight:20, attribution:65, displacement:10, dropoff:20},
+  _projectId: null  // null = proyecto nuevo; string = ID del proyecto cargado/guardado
+}
+let _uid = 1; const uid = () => _uid++
+let _proxyTargetOutcomeId = null
+let _proxyDomain = 'all'
+let _proxyScope = 'all'
+let _compPreset = 'cons' // 'cons' | 'opt' | 'neutral' | 'custom'
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+const t = k => T[state.lang][k] || k
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+const getSh = id => state.stakeholders.find(s => s.id===id)
+const getAdj = id => state.adjustments[id] || {deadweight:0,attribution:80,displacement:0,dropoff:10}
+
+function currSym(c) {
+  return {USD:'$',EUR:'€',ARS:'$',MXN:'$',UYU:'$U',GBP:'£',BRL:'R$'}[c||state.project.currency]||''
+}
+function fmt(n) {
+  if (!isFinite(n)) return '—'
+  const s = currSym(); const a = Math.abs(n)
+  if (a>=1e9) return s+(n/1e9).toFixed(2)+'B'
+  if (a>=1e6) return s+(n/1e6).toFixed(2)+'M'
+  if (a>=1e4) return s+(n/1e3).toFixed(1)+'K'
+  return s+Math.round(n).toLocaleString()
+}
+function fmtFull(n) { return currSym()+Math.round(n).toLocaleString() }
+
+// ─────────────────────────────────────────────
+// CALCULATION
+// ─────────────────────────────────────────────
+function calculate() {
+  const { period, investment, discountRate } = state.project
+  const r = (parseFloat(discountRate)||3.5)/100
+  const inv = parseFloat(investment)||0
+
+  const rows = state.outcomes.map(o => {
+    const adj = getAdj(o.id)
+    const yrs = Math.min(parseInt(period)||1, parseInt(o.duration)||1)
+    const dw = adj.deadweight/100, attr = adj.attribution/100
+    const disp = adj.displacement/100, drop = adj.dropoff/100
+    let pv = 0
+    for (let y=1; y<=yrs; y++) {
+      const base = (parseFloat(o.people)||0) * (parseFloat(o.proxy)||0)
+      pv += base*(1-dw)*attr*(1-disp)*Math.pow(1-drop,y-1)/Math.pow(1+r,y)
+    }
+    const sh = getSh(o.stakeholderId)
+    return {...o, pv, shName:sh?sh.name:'—'}
+  })
+  const totalPV = rows.reduce((s,r)=>s+r.pv,0)
+  const sroi = inv>0 ? totalPV/inv : 0
+  return {rows, totalPV, sroi, netValue:totalPV-inv, inv}
+}
+
+// Calculate with global B adjustments (overrides per-outcome adjustments)
+function calculateB() {
+  const { period, investment, discountRate } = state.project
+  const r = (parseFloat(discountRate)||3.5)/100
+  const inv = parseFloat(investment)||0
+  const b = state.scenB
+
+  const rows = state.outcomes.map(o => {
+    const yrs = Math.min(parseInt(period)||1, parseInt(o.duration)||1)
+    const dw = b.deadweight/100, attr = b.attribution/100
+    const disp = b.displacement/100, drop = b.dropoff/100
+    let pv = 0
+    for (let y=1; y<=yrs; y++) {
+      const base = (parseFloat(o.people)||0) * (parseFloat(o.proxy)||0)
+      pv += base*(1-dw)*attr*(1-disp)*Math.pow(1-drop,y-1)/Math.pow(1+r,y)
+    }
+    const sh = getSh(o.stakeholderId)
+    return {...o, pv, shName:sh?sh.name:'—'}
+  })
+  const totalPV = rows.reduce((s,r)=>s+r.pv,0)
+  const sroi = inv>0 ? totalPV/inv : 0
+  return {rows, totalPV, sroi, netValue:totalPV-inv, inv}
+}
+
+function interpText(r) {
+  const i = T[state.lang].interp
+  if (r<1) return i.lt1; if (r<2) return i['1-2']
+  if (r<4) return i['2-4']; if (r<10) return i['4-10']
+  return i.gt10
+}
+
+// ─────────────────────────────────────────────
+// PROXY MODAL
+// ─────────────────────────────────────────────
+function openProxyModal(outcomeId) {
+  _proxyTargetOutcomeId = outcomeId
+  _proxyDomain = 'all'
+  _proxyScope = 'all'
+  document.getElementById('proxy-modal').style.display='flex'
+  document.getElementById('proxy-search').value=''
+  document.getElementById('modal-title').textContent = t('modalTitle')
+  document.getElementById('modal-sub').textContent = t('modalSub')
+  document.getElementById('modal-cancel-lbl').textContent = t('modalCancel')
+  renderDomainTabs()
+  renderProxyList('')
+  setTimeout(()=>document.getElementById('proxy-search').focus(),80)
+}
+function closeProxyModal(e) {
+  if (e && e.target!==document.getElementById('proxy-modal')) return
+  document.getElementById('proxy-modal').style.display='none'
+  _proxyTargetOutcomeId=null
+}
+
+function renderDomainTabs() {
+  const domains = [
+    {k:'all',lbl:t('domAll')},
+    {k:'hc',lbl:t('domHc')},
+    {k:'sc',lbl:t('domSc')},
+    {k:'nc',lbl:t('domNc')},
+    {k:'env',lbl:t('domEnv')}
+  ]
+  document.getElementById('domain-tabs').innerHTML = domains.map(d=>
+    `<button class="domain-tab${_proxyDomain===d.k?' active':''}" onclick="setProxyDomain('${d.k}')">${d.lbl}</button>`
+  ).join('')
+  renderScopeTabs()
+}
+
+function renderScopeTabs() {
+  const scopes = [
+    {k:'all', lbl:state.lang==='es'||state.lang==='pt'?'Todos':'All'},
+    {k:'LATAM', lbl:'LATAM'},
+    {k:'ARG', lbl:'🇦🇷 ARG'},
+    {k:'MEX', lbl:'🇲🇽 MEX'},
+    {k:'URY', lbl:'🇺🇾 URY'},
+    {k:'COL', lbl:'🇨🇴 COL'},
+    {k:'CHL', lbl:'🇨🇱 CHL'},
+    {k:'PER', lbl:'🇵🇪 PER'},
+    {k:'Global', lbl:'🌎 Global'}
+  ]
+  const el = document.getElementById('scope-tabs')
+  if (!el) return
+  el.innerHTML = scopes.map(s=>
+    `<button class="domain-tab${_proxyScope===s.k?' active':''}" onclick="setProxyScope('${s.k}')" style="font-size:0.78rem">${s.lbl}</button>`
+  ).join('')
+}
+
+function setProxyDomain(d) {
+  _proxyDomain=d
+  renderDomainTabs()
+  renderProxyList(document.getElementById('proxy-search').value)
+}
+
+function setProxyScope(s) {
+  _proxyScope=s
+  renderScopeTabs()
+  renderProxyList(document.getElementById('proxy-search').value)
+}
+
+function filterProxies() {
+  renderProxyList(document.getElementById('proxy-search').value)
+}
+
+const SCOPE_LABELS = {ARG:'Argentina',MEX:'México',URY:'Uruguay',COL:'Colombia',CHL:'Chile',PER:'Perú',LATAM:'LATAM',Global:'Global'}
+
+function getFilteredProxies(q) {
+  const lang = state.lang
+  const qLow = (q||'').toLowerCase()
+  const matchDomain = p => _proxyDomain==='all' || p.domain===_proxyDomain
+  const pl = p => p[lang] || p.en
+  const matchQuery = p => !qLow || [pl(p).name, pl(p).cat, pl(p).meta].some(s=>s.toLowerCase().includes(qLow))
+
+  // For 'all' scope or LATAM/Global: simple filter
+  if (_proxyScope==='all' || _proxyScope==='LATAM' || _proxyScope==='Global') {
+    const scopeMatch = p => _proxyScope==='all' || p.scope===_proxyScope
+    return PROXIES.filter(p => scopeMatch(p) && matchDomain(p) && matchQuery(p))
+      .map(p => ({...p, _fallback:false}))
+  }
+
+  // Country scope: show country-specific proxies PLUS LATAM proxies not already covered
+  const scopeLow = _proxyScope.toLowerCase()
+  const countryProxies = PROXIES.filter(p => p.scope===_proxyScope && matchDomain(p) && matchQuery(p))
+  // Build set of base IDs that already have a country variant (e.g. 'hc-01' from 'hc-01-arg')
+  const coveredBaseIds = new Set(
+    PROXIES.filter(p=>p.scope===_proxyScope && matchDomain(p))
+      .map(p => p.id.replace(new RegExp(`-${scopeLow}$`), ''))
+  )
+  const latamFallbacks = PROXIES.filter(p =>
+    p.scope==='LATAM' && matchDomain(p) && matchQuery(p) && !coveredBaseIds.has(p.id)
+  ).map(p => ({...p, _fallback:true}))
+
+  return [...countryProxies.map(p=>({...p,_fallback:false})), ...latamFallbacks]
+}
+
+function renderProxyList(q) {
+  const lang = state.lang
+  const filtered = getFilteredProxies(q)
+  if (!filtered.length) {
+    document.getElementById('proxy-list').innerHTML=`<div class="empty-modal">${lang==='es'?'Sin resultados para':lang==='pt'?'Sem resultados para':'No results for'} "${esc(q||'')}"</div>`
+    return
+  }
+  const isCountry = !['all','LATAM','Global'].includes(_proxyScope)
+  const hasFallbacks = isCountry && filtered.some(p=>p._fallback)
+  // Disclaimer
+  const disclaimer = lang==='es'
+    ? `<div class="proxy-disclaimer">💡 Valores en <strong>USD</strong>. LATAM = promedios ponderados 2023-2024 · Los valores nacionales usan PPP o tipo de cambio oficial.${hasFallbacks?' Los marcados como <em>LATAM (ref.)</em> son valores regionales — no hay variante local disponible aún.':''}</div>`
+    : lang==='pt'
+    ? `<div class="proxy-disclaimer">💡 Valores em <strong>USD</strong>. LATAM = médias ponderadas 2023-2024 · Valores nacionais usam PPP ou taxa de câmbio oficial.${hasFallbacks?' Itens marcados como <em>LATAM (ref.)</em> usam valores regionais — ainda não há variante local disponível.':''}</div>`
+    : `<div class="proxy-disclaimer">💡 Values in <strong>USD</strong>. LATAM = weighted averages 2023-2024 · Country values use PPP or official exchange rates.${hasFallbacks?' Items marked <em>LATAM (ref.)</em> use regional values — no country-specific variant yet.':''}</div>`
+  // Group by cat
+  const groups = {}
+  filtered.forEach(p => {
+    const ploc = p[lang] || p.en
+    const cat = ploc.cat
+    if(!groups[cat]) groups[cat]=[]
+    groups[cat].push(p)
+  })
+  document.getElementById('proxy-list').innerHTML = disclaimer + Object.entries(groups).map(([cat, proxies])=>`
+    <div class="proxy-group">
+      <div class="proxy-group-title">${esc(cat)}</div>
+      ${proxies.map(p=>{
+        const ploc = p[lang] || p.en
+        const badge = p._fallback
+          ? `<span class="scope-badge scope-LATAM">LATAM (ref.)</span>`
+          : `<span class="scope-badge scope-${p.scope}">${SCOPE_LABELS[p.scope]||p.scope}</span>`
+        return `
+        <div class="proxy-row-item${p._fallback?' proxy-fallback':''}" onclick="applyProxy('${p.id}')">
+          <div class="proxy-info">
+            <div class="proxy-name">${esc(ploc.name)} ${badge}</div>
+            <div class="proxy-meta">${esc(ploc.meta)} · <em>${esc(ploc.note)}</em></div>
+          </div>
+          <div class="proxy-value">
+            <div class="proxy-amount">${currSym()}${p.value.toLocaleString()}</div>
+            <div class="proxy-unit">${esc(p.unit)}</div>
+          </div>
+        </div>`}).join('')}
+    </div>`).join('')
+}
+
+function applyProxy(proxyId) {
+  const p = PROXIES.find(x=>x.id===proxyId)
+  const o = state.outcomes.find(o=>o.id===_proxyTargetOutcomeId)
+  if (!p || !o) return
+  o.proxy = p.value
+  o.proxyNote = (p[state.lang]||p.en).note
+  o.proxyId = proxyId
+  if (!o.name) o.name = (p[state.lang]||p.en).name
+  document.getElementById('proxy-modal').style.display='none'
+  _proxyTargetOutcomeId=null
+  render()
+}
+
+// ─────────────────────────────────────────────
+// RENDER STEPS
+// ─────────────────────────────────────────────
+function renderStep1() {
+  const p = state.project
+  const currOpts = ['USD','EUR','ARS','MXN','UYU','GBP','BRL']
+    .map(c=>`<option value="${c}"${p.currency===c?' selected':''}>${c}</option>`).join('')
+  return `
+  <div class="section-header"><h2>${t('s1h')}</h2><p>${t('s1p')}</p></div>
+  <div class="card">
+    <div class="form-grid">
+      <div class="form-grid form-grid-2">
+        <div class="field"><label>${t('fProjName')}</label>
+          <input type="text" id="p-name" value="${esc(p.name)}" placeholder="${t('phProjName')}"></div>
+        <div class="field"><label>${t('fProjOrg')}</label>
+          <input type="text" id="p-org" value="${esc(p.org)}" placeholder="${t('phProjOrg')}"></div>
+      </div>
+      <div class="form-grid form-grid-3">
+        <div class="field"><label>${t('fProjYear')}</label>
+          <input type="number" id="p-year" value="${p.year}" min="2000" max="2050"></div>
+        <div class="field"><label>${t('fPeriod')}</label>
+          <input type="number" id="p-period" value="${p.period}" min="1" max="20"></div>
+        <div class="field"><label>${t('fDisc')}</label>
+          <input type="number" id="p-disc" value="${p.discountRate}" min="0" max="30" step="0.5">
+          <span class="field-note">${t('fDiscNote')}</span></div>
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="field"><label>${t('fInv')}</label>
+          <input type="number" id="p-inv" value="${esc(p.investment)}" min="0" placeholder="0"></div>
+        <div class="field"><label>${t('fCurr')}</label>
+          <select id="p-curr">${currOpts}</select></div>
+      </div>
+    </div>
+  </div>`
+}
+
+function renderStep2() {
+  const shs = state.stakeholders
+  const cards = shs.length ? shs.map((sh,i)=>`
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title" data-sh-title="${sh.id}">${esc(sh.name)||(t('fShName')+' '+(i+1))}</span>
+        <button class="btn-icon" onclick="removeSh(${sh.id})" title="Eliminar">✕</button>
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="field"><label>${t('fShName')}</label>
+          <input type="text" value="${esc(sh.name)}" placeholder="${t('phShName')}"
+            oninput="updSh(${sh.id},'name',this.value)"></div>
+        <div class="field"><label>${t('fShDesc')}</label>
+          <input type="text" value="${esc(sh.desc||'')}" placeholder="${t('phShDesc')}"
+            oninput="updSh(${sh.id},'desc',this.value)"></div>
+      </div>
+    </div>`).join('') :
+    `<div class="card"><div class="empty"><div class="empty-icon">👥</div>
+    <p>${t('noSh')}</p><p style="font-size:12px;color:var(--text-3)">${t('noShSub')}</p></div></div>`
+  return `<div class="section-header"><h2>${t('s2h')}</h2><p>${t('s2p')}</p></div>
+  ${cards}<button class="btn-add" onclick="addSh()">${t('addSh')}</button>`
+}
+
+function renderStep3() {
+  if (!state.stakeholders.length) return `
+    <div class="section-header"><h2>${t('s3h')}</h2></div>
+    <div class="card"><div class="empty"><div class="empty-icon">⚠️</div><p>${t('noSh2')}</p></div></div>`
+  return `<div class="section-header"><h2>${t('s3h')}</h2><p>${t('s3p')}</p></div>
+  ${state.stakeholders.map(sh => {
+    const outs = state.outcomes.filter(o=>o.stakeholderId===sh.id)
+    return `<div class="sh-group">
+      <div class="sh-group-header">
+        <span class="sh-tag">▸ ${esc(sh.name)||'—'}</span>
+        <button class="btn-add" style="width:auto;margin:0;padding:6px 14px;font-size:11.5px" onclick="addOut(${sh.id})">${t('addOut')}</button>
+      </div>
+      <div class="sh-group-body">
+        ${outs.length ? outs.map(o => {
+          const px = o.proxyId ? PROXIES.find(p=>p.id===o.proxyId) : null
+          return `<div class="out-card">
+            <div class="out-card-header">
+              <span class="out-card-title" data-out-title="${o.id}">${esc(o.name)||t('fOutName')}</span>
+              <button class="btn-icon" onclick="removeOut(${o.id})">✕</button>
+            </div>
+
+            <div class="out-section">
+              <div class="out-section-header">
+                <span class="out-section-lbl">${t('sOutcomeData')}</span>
+              </div>
+              <div class="form-grid form-grid-2">
+                <div class="field"><label>${t('fOutName')}</label>
+                  <input type="text" value="${esc(o.name||'')}" placeholder="${t('phOutName')}"
+                    oninput="updOut(${o.id},'name',this.value)"></div>
+                <div class="field"><label>${t('fOutDesc')}</label>
+                  <input type="text" value="${esc(o.desc||'')}" placeholder="${t('phOutDesc')}"
+                    oninput="updOut(${o.id},'desc',this.value)"></div>
+                <div class="field"><label>${t('fPeople')}</label>
+                  <input type="number" value="${o.people||''}" min="1" placeholder="0"
+                    oninput="updOut(${o.id},'people',this.value)"></div>
+                <div class="field"><label>${t('fDuration')}</label>
+                  <input type="number" value="${o.duration||state.project.period||3}" min="1" max="${state.project.period||20}"
+                    oninput="updOut(${o.id},'duration',this.value)"></div>
+              </div>
+            </div>
+
+            <div class="out-section">
+              <div class="out-section-header">
+                <span class="out-section-lbl">${t('sValorizacion')}</span>
+                <button class="btn-proxy" onclick="openProxyModal(${o.id})">
+                  📚 ${t('btnProxy')}
+                </button>
+              </div>
+              ${px?`<div class="out-val-badge" style="margin-bottom:10px;max-width:100%">✓ ${esc((px[state.lang]||px.en).name)}</div>`:''}
+              <div class="form-grid form-grid-2">
+                <div class="field"><label>${t('fProxy')} (${currSym()})</label>
+                  <input type="number" value="${o.proxy||''}" min="0" step="any" placeholder="0"
+                    oninput="updOut(${o.id},'proxy',this.value)"></div>
+                <div class="field"><label>${t('fProxyNote')}</label>
+                  <input type="text" value="${esc(o.proxyNote||'')}" placeholder="${t('phProxyNote')}"
+                    oninput="updOut(${o.id},'proxyNote',this.value)"></div>
+              </div>
+            </div>
+          </div>`
+        }).join('') : `<p style="font-size:12px;color:var(--text-3);padding:8px 0">${t('noOut')}</p>`}
+      </div>
+    </div>`
+  }).join('')}`
+}
+
+function slider(oid, field, val, label, hint) {
+  return `<div class="slider-field">
+    <div class="slider-row">
+      <span class="slider-label">${label}</span>
+      <span class="slider-val" id="sv-${oid}-${field}">${val}%</span>
+    </div>
+    <input type="range" min="${field==='attribution'?5:0}" max="${field==='dropoff'?50:field==='attribution'?100:95}" value="${val}"
+      oninput="updAdj(${oid},'${field}',+this.value)">
+    <p class="slider-hint">${hint}</p>
+  </div>`
+}
+
+function renderStep4() {
+  if (!state.outcomes.length) return `
+    <div class="section-header"><h2>${t('s4h')}</h2></div>
+    <div class="card"><div class="empty"><div class="empty-icon">⚠️</div><p>${t('noAdj')}</p></div></div>`
+  return `<div class="section-header"><h2>${t('s4h')}</h2><p>${t('s4p')}</p></div>
+  ${state.outcomes.map(o => {
+    const adj = getAdj(o.id), sh = getSh(o.stakeholderId)
+    return `<div class="adj-card">
+      <div class="adj-card-meta">
+        <div class="adj-out-name">${esc(o.name)||'—'}</div>
+        <span class="adj-sh-tag">${sh?esc(sh.name):'—'}</span>
+      </div>
+      <div class="adj-grid">
+        ${slider(o.id,'deadweight',adj.deadweight,t('aDead'),t('aDeadH'))}
+        ${slider(o.id,'attribution',adj.attribution,t('aAttr'),t('aAttrH'))}
+        ${slider(o.id,'displacement',adj.displacement,t('aDisp'),t('aDispH'))}
+        ${slider(o.id,'dropoff',adj.dropoff,t('aDrop'),t('aDropH'))}
+      </div>
+    </div>`
+  }).join('')}`
+}
+
+function renderStep5() {
+  const { rows, totalPV, sroi, netValue, inv } = calculate()
+  if (totalPV<=0||inv<=0) return `
+    <div class="section-header"><h2>${t('s5h')}</h2></div>
+    <div class="card"><div class="empty"><div class="empty-icon">📊</div><p>${t('s5warn')}</p></div></div>
+    <div style="margin-top:14px"><button class="btn btn-ghost" onclick="restart()">↩ ${t('s5New')}</button></div>`
+
+  const sorted = [...rows].sort((a,b)=>b.pv-a.pv)
+  return `
+  <div class="section-header">
+    <h2>${t('s5h')}</h2>
+    <p>${esc(state.project.name)||'—'} · ${esc(state.project.org)||'—'}</p>
+  </div>
+  <div class="result-hero">
+    <div class="sroi-label">SROI</div>
+    <div class="sroi-ratio">${sroi.toFixed(2)}<sup>:1</sup></div>
+    <p class="sroi-sub">${t('s5by')} <strong>${currSym()}1</strong> ${t('s5of')} <strong>${currSym()}${sroi.toFixed(2)}</strong> ${t('s5ofEnd')}</p>
+    <p class="sroi-interp">${interpText(sroi)}</p>
+  </div>
+  <div class="metrics-row">
+    <div class="metric"><div class="metric-lbl">${t('s5inv')}</div><div class="metric-val navy">${fmt(inv)}</div></div>
+    <div class="metric"><div class="metric-lbl">${t('s5val')}</div><div class="metric-val green">${fmt(totalPV)}</div></div>
+    <div class="metric"><div class="metric-lbl">${t('s5net')}</div><div class="metric-val amber">${fmt(netValue)}</div></div>
+  </div>
+  <div class="chart-wrap"><h3>${t('s5chart')}</h3><canvas id="sroi-chart"></canvas></div>
+  <div class="chart-wrap" id="sh-chart-wrap"><h3>${t('s5shChart')}</h3><canvas id="sh-chart"></canvas></div>
+  <div class="card" style="margin-bottom:16px">
+    <h3 style="font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:14px">${t('s5tbl')}</h3>
+    <table class="results-tbl">
+      <thead><tr>
+        <th>${t('s5Sh')}</th><th>${t('s5Out')}</th>
+        <th style="text-align:right">${t('s5PV')}</th>
+        <th style="text-align:right">${t('s5Pct')}</th>
+      </tr></thead>
+      <tbody>
+        ${sorted.map(r=>`<tr>
+          <td>${esc(r.shName)}</td><td>${esc(r.name||'—')}</td>
+          <td class="num">${fmtFull(r.pv)}</td>
+          <td class="pct">${totalPV>0?(r.pv/totalPV*100).toFixed(1)+'%':'—'}</td>
+        </tr>`).join('')}
+        <tr class="total-row"><td colspan="2">${t('s5Total')}</td>
+          <td class="num">${fmtFull(totalPV)}</td><td class="pct">100%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn btn-ghost" onclick="restart()">↩ ${t('s5New')}</button>
+    <button class="btn btn-ghost" onclick="printReport()">🖨 ${t('s5Print')}</button>
+    <button class="btn btn-blue" onclick="saveProject()">💾 ${t('s5Save')}</button>
+    <button class="btn btn-navy" onclick="toggleComp()">${state.showComp?t('s5hide'):t('s5comp')}</button>
+  </div>
+  ${state.showComp ? renderComparator(rows, totalPV, sroi, inv) : ''}`
+}
+
+function renderComparator(rowsA, pvA, sroiA, inv) {
+  const B = calculateB()
+  const lang = state.lang
+  const diff = B.sroi - sroiA
+  const diffPct = sroiA>0 ? ((B.sroi/sroiA-1)*100).toFixed(1) : 0
+  const isPos = diff >= 0
+  const curr = currSym()
+  const b = state.scenB
+
+  // Bar chart data (top 5 outcomes by A PV)
+  const top = [...rowsA].sort((a,x)=>x.pv-a.pv).slice(0,5)
+  const maxPV = Math.max(...top.map(r=>r.pv), ...top.map(r=>{const brow=B.rows.find(x=>x.id===r.id); return brow?brow.pv:0}), 1)
+
+  const sliderField = (field, label, min, max) => {
+    const val = b[field]
+    return `<div class="comp-slider-wrap">
+      <div class="comp-slider-lbl"><span>${label}</span><span id="csv-${field}">${val}%</span></div>
+      <input type="range" min="${min}" max="${max}" value="${val}" style="width:100%"
+        oninput="updCompB('${field}',+this.value)">
+    </div>`
+  }
+
+  const bars = top.map(r => {
+    const brow = B.rows.find(x=>x.id===r.id) || {pv:0}
+    const wA = (r.pv/maxPV*100).toFixed(1)
+    const wB = (brow.pv/maxPV*100).toFixed(1)
+    const name = esc(r.name||'—').substring(0,28)+(r.name&&r.name.length>28?'…':'')
+    return `<div class="comp-bar-row">
+      <div class="comp-bar-label" title="${esc(r.name||'')}">${name}</div>
+      <div class="comp-bar-track">
+        <div class="comp-bar-a" style="width:${wA}%"></div>
+      </div>
+      <div class="comp-bar-track" style="flex:.6">
+        <div class="comp-bar-b" style="width:${wB}%"></div>
+      </div>
+      <div class="comp-bar-vals">
+        <span class="comp-bar-val-a">${curr}${Math.round(r.pv).toLocaleString()}</span>
+        <span class="comp-bar-val-b">${curr}${Math.round(brow.pv).toLocaleString()}</span>
+      </div>
+    </div>`
+  }).join('')
+
+  const presets = [
+    {k:'cons', label:t('scPresetCons')},
+    {k:'opt',  label:t('scPresetOpt')},
+    {k:'neutral', label:t('scPresetNeutral')}
+  ]
+
+  return `<div class="comp-wrap">
+    <div class="comp-header">
+      <div class="comp-title">📊 ${lang==='es'?'Comparador de escenarios':lang==='pt'?'Comparador de cenários':'Scenario comparator'}</div>
+      <div class="comp-presets">
+        ${presets.map(p=>`<button class="comp-preset${_compPreset===p.k?' active':''}" onclick="applyPreset('${p.k}')">${p.label}</button>`).join('')}
+      </div>
+    </div>
+    <div class="comp-grid">
+      <div class="comp-card sc-a">
+        <div class="comp-card-lbl">${t('scA')} · ${t('scBaseLbl')}</div>
+        <div class="comp-card-name">${lang==='es'?'Ajustes de la etapa 4':lang==='pt'?'Ajustes da etapa 4':'Step 4 adjustments'}</div>
+        <div class="comp-sroi">${sroiA.toFixed(2)}<sup>:1</sup></div>
+        <div class="comp-pv">${lang==='es'?'Valor social':lang==='pt'?'Valor social':'Social value'}: ${curr}${Math.round(pvA).toLocaleString()}</div>
+        <div class="comp-interp">${interpText(sroiA)}</div>
+      </div>
+      <div class="comp-card sc-b">
+        <div class="comp-card-lbl">${t('scB')} · ${t('scAltLbl')}</div>
+        <div class="comp-card-name">${t('scGlobal')}</div>
+        <div class="comp-sroi" id="comp-b-sroi">${B.sroi.toFixed(2)}<sup>:1</sup></div>
+        <div class="comp-pv" id="comp-b-pv">${lang==='es'?'Valor social':lang==='pt'?'Valor social':'Social value'}: ${curr}${Math.round(B.totalPV).toLocaleString()}</div>
+        <div>
+          <span class="comp-diff ${isPos?'pos':'neg'}" id="comp-b-diff">${isPos?'▲':'▼'} ${Math.abs(diff).toFixed(2)}x (${Math.abs(diffPct)}%) ${t('scDiff')}</span>
+        </div>
+      </div>
+    </div>
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:16px">
+      <div style="font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:14px">${t('scGlobal')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px">
+        ${sliderField('deadweight', t('scDead'), 0, 70)}
+        ${sliderField('attribution', t('scAttr'), 5, 100)}
+        ${sliderField('displacement', t('scDisp'), 0, 50)}
+        ${sliderField('dropoff', t('scDrop'), 0, 50)}
+      </div>
+    </div>
+    <div class="comp-bar-wrap">
+      <div class="comp-bar-title">${t('scChartTitle')}</div>
+      <div id="comp-bars">${bars}</div>
+      <div class="comp-legend">
+        <span><span class="comp-legend-dot" style="background:var(--navy)"></span>${t('scA')}</span>
+        <span><span class="comp-legend-dot" style="background:var(--amber)"></span>${t('scB')}</span>
+      </div>
+    </div>
+  </div>`
+}
+
+// ─────────────────────────────────────────────
+// PRINT REPORT
+// ─────────────────────────────────────────────
+function printReport() {
+  const { rows, totalPV, sroi, netValue, inv } = calculate()
+  const p = state.project
+  const sorted = [...rows].sort((a,b)=>b.pv-a.pv)
+  const curr = currSym()
+  const lang = state.lang
+  const fmt2 = n => curr + Math.round(n).toLocaleString()
+  const pct = n => totalPV>0 ? (n/totalPV*100).toFixed(1)+'%' : '—'
+  const interp = interpText(sroi)
+
+  const adjRows = state.outcomes.map(o => {
+    const adj = getAdj(o.id)
+    const sh = getSh(o.stakeholderId)
+    return `<tr>
+      <td>${esc(sh?sh.name:'—')}</td>
+      <td>${esc(o.name||'—')}</td>
+      <td>${adj.deadweight}%</td>
+      <td>${adj.attribution}%</td>
+      <td>${adj.displacement}%</td>
+      <td>${adj.dropoff}%/yr</td>
+      <td style="text-align:right;font-weight:600">${fmt2(rows.find(r=>r.id===o.id)?.pv||0)}</td>
+    </tr>`
+  }).join('')
+
+  const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="UTF-8">
+  <title>SROI Report — ${esc(p.name||'Project')}</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Montserrat',sans-serif;color:#0F1320;background:#fff;padding:32px 40px;font-size:12px}
+    .hd{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #151F6D;padding-bottom:16px;margin-bottom:24px}
+    .logo{font-size:18px;font-weight:900;color:#151F6D;letter-spacing:.04em}
+    .logo span{color:#146BF6}
+    .meta{text-align:right;color:#3D4666;font-size:11px;line-height:1.7}
+    .hero{background:#151F6D;color:#fff;border-radius:10px;padding:24px 32px;margin-bottom:20px;display:flex;align-items:center;gap:32px}
+    .sroi-big{font-size:52px;font-weight:900;line-height:1;color:#fff}
+    .sroi-big sup{font-size:22px;vertical-align:super;font-weight:700;opacity:.8}
+    .sroi-txt h3{font-size:13px;font-weight:700;color:#7B9BFF;margin-bottom:4px}
+    .sroi-txt p{color:#C5D0FF;font-size:12px;line-height:1.5}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .kpi{border:1px solid #DDE0EE;border-radius:8px;padding:14px 18px}
+    .kpi-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#8891B0;margin-bottom:4px}
+    .kpi-val{font-size:18px;font-weight:800;color:#151F6D}
+    .kpi-val.g{color:#1A7A4A}.kpi-val.a{color:#B87D1B}
+    h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#8891B0;margin:20px 0 10px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th{text-align:left;padding:7px 10px;background:#F5F6FA;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#3D4666;border-bottom:2px solid #DDE0EE}
+    td{padding:7px 10px;border-bottom:1px solid #ECEEF8;color:#0F1320}
+    tr:last-child td{border-bottom:none}
+    .tot td{font-weight:800;background:#E8EAF6;color:#151F6D}
+    .num{text-align:right;font-variant-numeric:tabular-nums}
+    .footer{margin-top:24px;padding-top:12px;border-top:1px solid #DDE0EE;color:#8891B0;font-size:10px;display:flex;justify-content:space-between}
+    @media print{body{padding:16px 20px}button{display:none}}
+  </style>
+  </head><body>
+  <div class="hd">
+    <div class="logo">ZIGLA <span>·</span> SROI</div>
+    <div class="meta">
+      <div><strong>${esc(p.name||'—')}</strong> · ${esc(p.org||'—')}</div>
+      <div>${lang==='es'?'Período':lang==='pt'?'Período':'Period'}: ${p.period} ${lang==='es'?'años':lang==='pt'?'anos':'years'} · ${lang==='es'?'Tasa de descuento':lang==='pt'?'Taxa de desconto':'Discount rate'}: ${p.discountRate}% · ${lang==='es'?'Moneda':lang==='pt'?'Moeda':'Currency'}: ${p.currency}</div>
+      <div>${new Date().toLocaleDateString(lang==='es'?'es-AR':lang==='pt'?'pt-BR':'en-US',{year:'numeric',month:'long',day:'numeric'})}</div>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="sroi-big">${sroi.toFixed(2)}<sup>:1</sup></div>
+    <div class="sroi-txt">
+      <h3>Social Return on Investment (SROI)</h3>
+      <p>${lang==='es'?'Por cada':lang==='pt'?'Para cada':'For every'} ${curr}1 ${lang==='es'?'invertido se generan':lang==='pt'?'investido, o programa gera':'invested,'} <strong>${curr}${sroi.toFixed(2)}</strong> ${lang==='es'?'en valor social.':lang==='pt'?' em valor social.':' in social value is created.'}</p>
+      <p style="margin-top:6px;font-style:italic;opacity:.85">${interp}</p>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-lbl">${lang==='es'?'Inversión total':lang==='pt'?'Investimento total':'Total investment'}</div><div class="kpi-val">${fmt2(inv)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">${lang==='es'?'Valor social total (VP)':lang==='pt'?'Valor social total (VP)':'Total social value (PV)'}</div><div class="kpi-val g">${fmt2(totalPV)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">${lang==='es'?'Valor neto social':lang==='pt'?'Valor líquido social':'Net social value'}</div><div class="kpi-val a">${fmt2(netValue)}</div></div>
+  </div>
+  <h2>${lang==='es'?'Detalle de resultados e impactos':lang==='pt'?'Detalhamento de resultados e impactos':'Outcomes & impact detail'}</h2>
+  <table>
+    <thead><tr>
+      <th>${lang==='es'?'Parte interesada':lang==='pt'?'Parte interessada':'Stakeholder'}</th>
+      <th>${lang==='es'?'Resultado':lang==='pt'?'Resultado':'Outcome'}</th>
+      <th>${lang==='es'?'Peso muerto':lang==='pt'?'Peso morto':'Deadweight'}</th>
+      <th>${lang==='es'?'Atribución':lang==='pt'?'Atribuição':'Attribution'}</th>
+      <th>${lang==='es'?'Desplazamiento':lang==='pt'?'Deslocamento':'Displacement'}</th>
+      <th>${lang==='es'?'Caída anual':lang==='pt'?'Decaimento':'Drop-off'}</th>
+      <th class="num">${lang==='es'?'Valor presente':lang==='pt'?'Valor presente':'Present value'}</th>
+    </tr></thead>
+    <tbody>
+      ${adjRows}
+      <tr class="tot"><td colspan="6">${lang==='es'?'TOTAL VALOR PRESENTE':lang==='pt'?'TOTAL VALOR PRESENTE':'TOTAL PRESENT VALUE'}</td><td class="num">${fmt2(totalPV)}</td></tr>
+    </tbody>
+  </table>
+  <div class="footer">
+    <span>ZIGLA Consultores · Calculadora SROI (Social Value International)</span>
+    <span>${lang==='es'?'Todos los valores en':lang==='pt'?'Todos os valores em':'All values in'} ${p.currency} · ${lang==='es'?'Tasa de descuento':lang==='pt'?'Taxa de desconto':'Discount rate'} ${p.discountRate}%</span>
+  </div>
+  <script>window.onload=()=>{window.print()}<\/script>
+  </body></html>`
+
+  const w = window.open('','_blank','width=940,height=720')
+  if (!w) { alert(lang==='es'?'Por favor permití las ventanas emergentes para imprimir.':lang==='pt'?'Por favor permita janelas pop-up para imprimir.':'Please allow pop-ups to print.'); return }
+  w.document.write(html)
+  w.document.close()
+}
+
+// ─────────────────────────────────────────────
+// CHART
+// ─────────────────────────────────────────────
+let chartInst = null, shChartInst = null
+const PALETTE = ['#151F6D','#146BF6','#1A7A4A','#B87D1B','#7B2FBE','#C75146','#2A6496','#6B5CA5','#3B7A57']
+function drawChart() {
+  const el = document.getElementById('sroi-chart'); if (!el) return
+  if (chartInst){chartInst.destroy();chartInst=null}
+  const {rows} = calculate()
+  const sorted = [...rows].sort((a,b)=>b.pv-a.pv)
+  const shColorMap = {}
+  state.stakeholders.forEach((sh,i)=>{shColorMap[sh.id]=PALETTE[i%PALETTE.length]})
+  const dark = document.documentElement.getAttribute('data-theme')==='dark' ||
+    (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches)
+  const gc=dark?'rgba(255,255,255,.05)':'rgba(21,31,109,.05)', tc=dark?'#3D4666':'#8891B0'
+  chartInst = new Chart(el, {
+    type:'bar',
+    data:{
+      labels:sorted.map(r=>r.name||'—'),
+      datasets:[{data:sorted.map(r=>Math.round(r.pv)),
+        backgroundColor:sorted.map(r=>shColorMap[r.stakeholderId]||PALETTE[0]),
+        borderRadius:5,borderSkipped:false}]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtFull(ctx.raw)}}},
+      scales:{
+        x:{ticks:{color:tc,font:{family:'Montserrat',size:10,weight:'600'},callback:v=>fmt(v)},
+          grid:{color:gc},border:{display:false}},
+        y:{ticks:{color:tc,font:{family:'Montserrat',size:11.5}},grid:{display:false},border:{display:false}}
+      }
+    }
+  })
+  el.parentElement.style.height = Math.max(120,sorted.length*46+40)+'px'
+  el.style.height='100%'
+}
+
+function drawShChart() {
+  const el = document.getElementById('sh-chart'); if (!el) return
+  if (shChartInst){shChartInst.destroy();shChartInst=null}
+  const {rows} = calculate()
+  if (!rows.length) return
+  const shMap = {}
+  state.stakeholders.forEach((sh,i) => {
+    shMap[sh.id] = {name: sh.name||'—', pv: 0, color: PALETTE[i%PALETTE.length]}
+  })
+  rows.forEach(r => { if (shMap[r.stakeholderId]) shMap[r.stakeholderId].pv += r.pv })
+  const shData = Object.values(shMap).filter(s => s.pv > 0)
+  if (!shData.length) return
+  const dark = document.documentElement.getAttribute('data-theme')==='dark' ||
+    (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches)
+  const tc = dark?'#3D4666':'#8891B0'
+  const totalPV = shData.reduce((s,d)=>s+d.pv,0)
+  shChartInst = new Chart(el, {
+    type:'doughnut',
+    data:{
+      labels: shData.map(d=>d.name),
+      datasets:[{data: shData.map(d=>Math.round(d.pv)),
+        backgroundColor: shData.map(d=>d.color),
+        borderWidth: 2,
+        borderColor: dark?'#0F1428':'#FFFFFF',
+        hoverOffset: 8
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      cutout:'62%',
+      plugins:{
+        legend:{position:'right', labels:{color:tc, font:{family:'Montserrat',size:11.5,weight:'600'}, padding:14, usePointStyle:true, pointStyleWidth:10}},
+        tooltip:{callbacks:{
+          label: ctx => {
+            const pct = totalPV>0?(ctx.raw/totalPV*100).toFixed(1):'0'
+            return ` ${ctx.label}: ${fmtFull(ctx.raw)} (${pct}%)`
+          }
+        }}
+      }
+    }
+  })
+  el.parentElement.style.height = Math.max(160, shData.length*52+40)+'px'
+  el.style.height='100%'
+}
+
+// ─────────────────────────────────────────────
+// MUTATIONS
+// ─────────────────────────────────────────────
+function saveStep1() {
+  const g = id=>document.getElementById(id)
+  const s = k => {const el=g(k); return el?el.value:null}
+  if(s('p-name')!==null) state.project.name=s('p-name')
+  if(s('p-org')!==null) state.project.org=s('p-org')
+  if(s('p-year')!==null) state.project.year=parseInt(s('p-year'))||2026
+  if(s('p-period')!==null) state.project.period=parseInt(s('p-period'))||3
+  if(s('p-inv')!==null) state.project.investment=s('p-inv')
+  if(s('p-curr')!==null) state.project.currency=s('p-curr')
+  if(s('p-disc')!==null) state.project.discountRate=parseFloat(s('p-disc'))||3.5
+}
+
+function addSh(){ state.stakeholders.push({id:uid(),name:'',desc:''}); render(); setTimeout(()=>{const i=document.querySelectorAll('[data-sh-title]');if(i.length){const card=i[i.length-1].closest('.card');if(card){const inp=card.querySelector('input');if(inp)inp.focus()}}},50) }
+function removeSh(id){ state.stakeholders=state.stakeholders.filter(s=>s.id!==id); state.outcomes=state.outcomes.filter(o=>o.stakeholderId!==id); render() }
+function updSh(id,field,val){
+  const sh=state.stakeholders.find(s=>s.id===id); if(sh)sh[field]=val
+  if(field==='name'){document.querySelectorAll(`[data-sh-title="${id}"]`).forEach(el=>el.textContent=val||'—')}
+}
+
+function addOut(sid){ state.outcomes.push({id:uid(),stakeholderId:sid,name:'',desc:'',people:'',proxy:'',proxyNote:'',duration:state.project.period||3}); render() }
+function removeOut(id){ state.outcomes=state.outcomes.filter(o=>o.id!==id); delete state.adjustments[id]; render() }
+function updOut(id,field,val){
+  const o=state.outcomes.find(o=>o.id===id); if(o){o[field]=val}
+  if(field==='name'){document.querySelectorAll(`[data-out-title="${id}"]`).forEach(el=>el.textContent=val||'—')}
+}
+function updAdj(id,field,val){
+  if(!state.adjustments[id])state.adjustments[id]={deadweight:0,attribution:80,displacement:0,dropoff:10}
+  state.adjustments[id][field]=val
+  const el=document.getElementById(`sv-${id}-${field}`); if(el)el.textContent=val+'%'
+}
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+function renderNav() {
+  const steps=T[state.lang].steps
+  document.getElementById('steps-nav').innerHTML=steps.map((lbl,i)=>{
+    const n=i+1,active=n===state.step,done=state.visited.has(n)&&n<state.step
+    return `<button class="step-pill ${active?'active':done?'done':''}"
+      onclick="${done?`goToStep(${n})`:'void 0'}" ${!done&&!active?'disabled':''}>
+      <span class="step-num">${done?'✓':n}</span>
+      <span class="step-pill-lbl">${lbl}</span>
+    </button>`
+  }).join('')
+}
+
+function renderFooter() {
+  const n=state.step, steps=T[state.lang].steps
+  document.getElementById('footer-step-lbl').textContent=`${t('step')} ${n} ${t('of')} 5`
+  document.getElementById('footer-step-name').textContent=steps[n-1]
+  document.getElementById('lbl-back').textContent=t('back')
+  document.getElementById('btn-back').style.visibility=n===1?'hidden':''
+  const nb=document.getElementById('btn-next')
+  if(n===5){nb.style.display='none'}else{nb.style.display='';document.getElementById('lbl-next').textContent=n===4?t('finish'):t('next')}
+}
+
+function render() {
+  const fns=[null,renderStep1,renderStep2,renderStep3,renderStep4,renderStep5]
+  document.getElementById('step-container').innerHTML=fns[state.step]()
+  if(state.step===5)setTimeout(()=>{drawChart();drawShChart()},80)
+  renderNav(); renderFooter()
+  document.getElementById('app-tool-lbl').textContent=t('toolLabel')
+  document.title=t('toolLabel')+' · ZIGLA'
+  document.getElementById('lang-es').className='lang-opt'+(state.lang==='es'?' active':'')
+  document.getElementById('lang-en').className='lang-opt'+(state.lang==='en'?' active':'')
+  document.getElementById('lang-pt').className='lang-opt'+(state.lang==='pt'?' active':'')
+  const lbl=document.getElementById('lbl-projects'); if(lbl) lbl.textContent=t('projs')
+}
+
+function goNext(){if(state.step===1)saveStep1();if(state.step<5){state.step++;state.visited.add(state.step);render();window.scrollTo(0,0)}}
+function goBack(){if(state.step===1)return;if(state.step===2)saveStep1();state.step--;render();window.scrollTo(0,0)}
+function goToStep(n){if(state.step===1)saveStep1();state.step=n;render();window.scrollTo(0,0)}
+function toggleComp(){state.showComp=!state.showComp;render()}
+function updCompB(field, val){
+  state.scenB[field]=val
+  _compPreset='custom'
+  // Only update the label and the comp-wrap content to keep slider focus
+  const lblEl=document.getElementById('csv-'+field)
+  if(lblEl) lblEl.textContent=val+'%'
+  // Refresh the comparison section without touching sliders
+  refreshCompDisplay()
+}
+function refreshCompDisplay(){
+  const A = calculate()
+  const B = calculateB()
+  const diff = B.sroi - A.sroi
+  const diffPct = A.sroi>0 ? ((B.sroi/A.sroi-1)*100).toFixed(1) : 0
+  const isPos = diff >= 0
+  const curr = currSym()
+  // Update scenario B card values
+  const elSroi = document.getElementById('comp-b-sroi')
+  const elPV   = document.getElementById('comp-b-pv')
+  const elDiff = document.getElementById('comp-b-diff')
+  if(elSroi) elSroi.innerHTML = B.sroi.toFixed(2)+'<sup>:1</sup>'
+  if(elPV){
+    const lang=state.lang
+    elPV.textContent=(lang==='es'?'Valor social':lang==='pt'?'Valor social':'Social value')+': '+curr+Math.round(B.totalPV).toLocaleString()
+  }
+  if(elDiff){
+    elDiff.className='comp-diff '+(isPos?'pos':'neg')
+    elDiff.textContent=(isPos?'▲':'▼')+' '+Math.abs(diff).toFixed(2)+'x ('+Math.abs(diffPct)+'%) '+t('scDiff')
+  }
+  // Refresh bars
+  const barsEl = document.getElementById('comp-bars')
+  if(barsEl){
+    const top = [...A.rows].sort((a,x)=>x.pv-a.pv).slice(0,5)
+    const maxPV = Math.max(...top.map(r=>r.pv), ...top.map(r=>{const brow=B.rows.find(x=>x.id===r.id);return brow?brow.pv:0}), 1)
+    barsEl.innerHTML = top.map(r => {
+      const brow = B.rows.find(x=>x.id===r.id)||{pv:0}
+      const wA = (r.pv/maxPV*100).toFixed(1)
+      const wB = (brow.pv/maxPV*100).toFixed(1)
+      const name = esc(r.name||'—').substring(0,28)+(r.name&&r.name.length>28?'…':'')
+      return `<div class="comp-bar-row">
+        <div class="comp-bar-label" title="${esc(r.name||'')}">${name}</div>
+        <div class="comp-bar-track"><div class="comp-bar-a" style="width:${wA}%"></div></div>
+        <div class="comp-bar-track" style="flex:.6"><div class="comp-bar-b" style="width:${wB}%"></div></div>
+        <div class="comp-bar-vals">
+          <span class="comp-bar-val-a">${curr}${Math.round(r.pv).toLocaleString()}</span>
+          <span class="comp-bar-val-b">${curr}${Math.round(brow.pv).toLocaleString()}</span>
+        </div>
+      </div>`
+    }).join('')
+  }
+}
+function applyPreset(k){
+  _compPreset=k
+  const presets={
+    cons:{deadweight:30, attribution:60, displacement:15, dropoff:25},
+    opt: {deadweight:10, attribution:80, displacement:5,  dropoff:10},
+    neutral:{deadweight:20, attribution:70, displacement:10, dropoff:15}
+  }
+  state.scenB={...presets[k]}
+  render()
+}
+function setLang(l){if(state.step===1)saveStep1();state.lang=l;render()}
+function restart(){
+  const msg=state.lang==='es'?'¿Iniciar un nuevo cálculo? Se borrarán todos los datos.':state.lang==='pt'?'Iniciar um novo cálculo? Todos os dados serão apagados.':'Start a new calculation? All data will be lost.'
+  if(!confirm(msg))return
+  state={lang:state.lang,step:1,visited:new Set([1]),
+    project:{name:'',org:'',year:2026,period:3,investment:'',currency:'USD',discountRate:3.5},
+    stakeholders:[],outcomes:[],adjustments:{},
+    showComp:false, scenB:{deadweight:20,attribution:65,displacement:10,dropoff:20},
+    _projectId:null}
+  _compPreset='cons'
+  render();window.scrollTo(0,0)
+}
+
+// ─────────────────────────────────────────────
+// PROYECTOS: SAVE / LOAD / MODAL
+// ─────────────────────────────────────────────
+
+function showToast(msg, dur=2400) {
+  const el = document.getElementById('toast')
+  if (!el) return
+  el.textContent = msg
+  el.classList.add('show')
+  clearTimeout(el._t)
+  el._t = setTimeout(() => el.classList.remove('show'), dur)
+}
+
+function buildProjectRecord() {
+  const { rows, totalPV, sroi, netValue, inv } = calculate()
+  const id = state._projectId || ('sroi_' + Date.now())
+  return {
+    // Identificación
+    id,
+    sf_id: null,          // Se llena cuando se sincroniza con Salesforce (Id del registro)
+    sf_object: 'SROI_Calculation__c',  // Objeto SF de destino
+    version: '1.0',
+    savedAt: new Date().toISOString(),
+    lang: state.lang,
+    // Campos SF indexables (top-level para SOQL)
+    name: state.project.name || (state.lang==='pt'?'Sem nome':state.lang==='en'?'Unnamed':'Sin nombre'),
+    org: state.project.org || '',
+    year: state.project.year,
+    period: state.project.period,
+    investment: parseFloat(state.project.investment)||0,
+    currency: state.project.currency,
+    discountRate: parseFloat(state.project.discountRate)||3.5,
+    sroi: parseFloat(sroi.toFixed(4)),
+    totalPV: parseFloat(totalPV.toFixed(2)),
+    netValue: parseFloat(netValue.toFixed(2)),
+    stakeholderCount: state.stakeholders.length,
+    outcomeCount: state.outcomes.length,
+    // Blob completo → JSON_Data__c en SF
+    data: {
+      project: {...state.project},
+      stakeholders: state.stakeholders.map(s=>({...s})),
+      outcomes: state.outcomes.map(o=>({...o})),
+      adjustments: {...state.adjustments},
+      scenB: {...state.scenB},
+      _uid
+    }
+  }
+}
+
+function saveProject() {
+  const rec = buildProjectRecord()
+  const existing = state._projectId ? StorageAdapter.get(state._projectId) : null
+  if (existing) {
+    if (!confirm(t('projOverwrite'))) return
+  }
+  StorageAdapter.save(rec)
+  state._projectId = rec.id
+  showToast(t('s5Saved'))
+}
+
+function loadProject(id) {
+  const rec = StorageAdapter.get(id)
+  if (!rec || !rec.data) return
+  const d = rec.data
+  state = {
+    lang: state.lang,
+    step: 5,
+    visited: new Set([1,2,3,4,5]),
+    project: {...d.project},
+    stakeholders: d.stakeholders||[],
+    outcomes: d.outcomes||[],
+    adjustments: d.adjustments||{},
+    showComp: false,
+    scenB: d.scenB||{deadweight:20,attribution:65,displacement:10,dropoff:20},
+    _projectId: id
+  }
+  _uid = d._uid || (Math.max(0,...state.stakeholders.map(s=>s.id||0),...state.outcomes.map(o=>o.id||0))+1)
+  _compPreset = 'cons'
+  closeProjModal()
+  render()
+  window.scrollTo(0,0)
+  showToast(t('projLoaded'))
+}
+
+function deleteProject(id) {
+  if (!confirm(t('projDeleteConfirm'))) return
+  StorageAdapter.delete(id)
+  if (state._projectId === id) state._projectId = null
+  renderProjList()
+}
+
+function exportProjectJSON(id) {
+  const rec = StorageAdapter.get(id)
+  if (!rec) return
+  const blob = new Blob([JSON.stringify(rec, null, 2)], {type:'application/json'})
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `sroi_${(rec.name||'proyecto').replace(/\s+/g,'_').toLowerCase()}_${rec.savedAt.slice(0,10)}.json`
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
+function openProjectsModal() {
+  const el = document.getElementById('proj-modal')
+  if (!el) return
+  document.getElementById('pm-title').textContent = t('projsTitle')
+  document.getElementById('pm-sub').textContent = t('projsSub')
+  document.getElementById('lbl-projects').textContent = t('projs')
+  renderProjList()
+  el.style.display = 'flex'
+}
+
+function closeProjModal(e) {
+  if (e && e.target !== document.getElementById('proj-modal')) return
+  document.getElementById('proj-modal').style.display = 'none'
+}
+
+function toggleSfNote() {
+  const body = document.getElementById('sf-note-body')
+  const chev = document.getElementById('sf-chevron')
+  body.classList.toggle('open')
+  chev.textContent = body.classList.contains('open') ? '▼' : '▶'
+}
+
+function fmtDate(iso) {
+  try {
+    const d = new Date(iso)
+    return d.toLocaleDateString(state.lang==='en'?'en-US':'es-AR',{day:'2-digit',month:'short',year:'numeric'})
+  } catch(e) { return iso.slice(0,10) }
+}
+
+function renderProjList() {
+  const container = document.getElementById('proj-list-container')
+  if (!container) return
+  const projects = StorageAdapter.list()
+  if (projects.length === 0) {
+    container.innerHTML = `<div class="proj-empty">
+      <div class="proj-empty-icon">📋</div>
+      <p style="font-weight:700;color:var(--text-2)">${t('projEmpty')}</p>
+      <p>${t('projEmptySub')}</p>
+    </div>`
+    return
+  }
+  const curr = state._projectId
+  const sym = r => r.currency==='EUR'?'€':r.currency==='BRL'?'R$':r.currency==='GBP'?'£':'$'
+  container.innerHTML = `<div class="proj-list">` + projects.map(r => `
+    <div class="proj-item" style="${r.id===curr?'border-left:3px solid var(--navy)':''}">
+      <div class="proj-item-main">
+        <div class="proj-item-name">${r.name||'—'}</div>
+        <div class="proj-item-org">${r.org||'—'}</div>
+        <div class="proj-item-chips">
+          ${r.sroi>0?`<span class="proj-chip sroi">SROI ${r.sroi.toFixed(2)}:1</span>`:''}
+          <span class="proj-chip">${sym(r)}${r.investment>=1000?(r.investment/1000).toFixed(0)+'K':r.investment}</span>
+          <span class="proj-chip">${r.stakeholderCount} ${state.lang==='pt'?'partes':state.lang==='en'?'stakeholders':'partes'}</span>
+          <span class="proj-chip">${r.outcomeCount} ${state.lang==='en'?'outcomes':'resultados'}</span>
+          ${r.id===curr?`<span class="proj-chip" style="background:#E8F5E9;color:#2E7D32;border-color:#A5D6A7">${state.lang==='en'?'Current':'Actual'}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <div class="proj-item-date">${fmtDate(r.savedAt)}</div>
+        <div class="proj-item-btns">
+          <button class="btn btn-blue btn-xs" onclick="loadProject('${r.id}')">${t('projLoad')}</button>
+          <button class="btn btn-ghost btn-xs" onclick="exportProjectJSON('${r.id}')" title="Exportar JSON">${t('projExport')}</button>
+          <button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteProject('${r.id}')" title="${t('projDel')}">✕</button>
+        </div>
+      </div>
+    </div>`).join('') + `</div>`
+}
+
+render()
+</script>
